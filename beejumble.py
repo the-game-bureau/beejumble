@@ -6,8 +6,13 @@ import xml.etree.ElementTree as ET
 import random
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-import ftplib
-import webbrowser
+from ftplib import FTP
+
+# FTP Server Details
+FTP_HOST = "ftp.tii.ezv.temporary.site"
+FTP_PORT = 21
+FTP_USER = "beejumble@tii.ezv.temporary.site"
+FTP_PASS = "{jTm-6zL$r_h"
 
 # Define Central Time offset
 CT_OFFSET = timedelta(hours=-6)
@@ -16,18 +21,19 @@ central_time_zone = timezone(CT_OFFSET)
 # Generate date-specific filenames and display formats
 current_date = datetime.now(central_time_zone)
 formatted_date = current_date.strftime("%Y%m%d")
-formatted_date_for_display = current_date.strftime("%A, %B %d, %Y")
+formatted_date_for_display = current_date.strftime("%A,%B%d,%Y")
 xml_file_name = f"{formatted_date}BEEJUMBLE.xml"
 html_file_name = f"{formatted_date}BEEJUMBLE.html"
-beejumble_url = f"http://tii.ezv.temporary.site/beejumble/{html_file_name}"
 
-# Set the directory to the same location as the .py file, with fallback to the current directory
+# Set file paths to the current working directory
 try:
     script_folder = Path(__file__).parent
 except NameError:
-    script_folder = Path('.')
+    script_folder = Path('.')  # Use current directory if __file__ is unavailable
+
 xml_file_path = script_folder / xml_file_name
 html_file_path = script_folder / html_file_name
+index_path = script_folder / "index.html"
 
 # Function to scrape data from the NYT Spelling Bee puzzle page
 def scrape_nyt_spelling_bee(xml_file_path):
@@ -42,7 +48,7 @@ def scrape_nyt_spelling_bee(xml_file_path):
             if today_answers:
                 root = ET.Element("root")
                 for word in today_answers:
-                    ET.SubElement(root, "word", length="_ " * len(word)).text = word
+                    ET.SubElement(root, "word", length=str(len(word))).text = word
                 ET.ElementTree(root).write(xml_file_path, encoding="utf-8", xml_declaration=True)
                 print(f"Scraped and saved data to {xml_file_path}")
                 return True
@@ -88,52 +94,92 @@ def generate_html(words, lengths, html_file_path):
     with open(html_file_path, 'w') as html_file:
         html_file.write('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n')
         html_file.write('<meta name="viewport" content="width=device-width, initial-scale=1.0">\n')
+
+        # Add CSS styles
         html_file.write('<style>')
-        html_file.write('@font-face { font-family: "FrankRuhl"; src: url("FrankRuhl.ttf") format("truetype"); }')
-        html_file.write('body { font-family: "FrankRuhl", sans-serif; font-size: 24px; }')
-        html_file.write('table { width: 100%; table-layout: fixed; }')
-        html_file.write('.beebutton { width: 50%; margin-top: 10px; padding: 15px 0; background-color: #FFD700; color: #333;')
-        html_file.write('font-size: 18px; border: 2px solid black; border-radius: 5px; cursor: pointer;')
-        html_file.write('text-align: center; font-weight: bold; text-decoration: none; font-family: "Interstate-Bold", sans-serif;')
-        html_file.write('display: inline-block; }')
-        html_file.write('.beebutton:hover { background-color: #FFC107; }')
-        html_file.write('.print-button-container { display: flex; justify-content: center; margin-bottom: 10px; }')
-        html_file.write('h4 { text-align: center; font-size: 20px; margin: 0; line-height: 1.2; }')
-        html_file.write('.title-spacer { margin-bottom: 20px; }')
-        html_file.write('@media print { .beebutton { display: none; } body { -webkit-print-color-adjust: exact; } }')
-        html_file.write('@page { size: letter landscape; margin: 10mm; }')
+        html_file.write('''
+            @font-face { font-family: "FrankRuhl"; src: url("FrankRuhl.ttf") format("truetype"); }
+            body { font-family: "FrankRuhl", sans-serif; font-size: 24px; }
+            table { width: 100%; table-layout: fixed; }
+            .beebutton {
+                width: 50%;
+                margin-top: 10px;
+                padding: 15px 0;
+                background-color: #FFD700;
+                color: #333;
+                font-size: 18px;
+                border: 2px solid black;
+                border-radius: 5px;
+                cursor: pointer;
+                text-align: center;
+                font-weight: bold;
+                text-decoration: none;
+                font-family: "Interstate-Bold", sans-serif;
+                display: inline-block;
+            }
+            .beebutton:hover { background-color: #FFC107; }
+            .print-button-container { display: flex; justify-content: center; margin-bottom: 10px; }
+            h4 { text-align: center; font-size: 20px; margin: 0; line-height: 1.2; }
+            .title-spacer { margin-bottom: 20px; }
+            @media print { .beebutton { display: none; } body { -webkit-print-color-adjust: exact; } }
+            @page { size: letter landscape; margin: 10mm; }
+            td { vertical-align: top; padding: 5px; }
+            td > table { width: 100%; border-spacing: 0; }
+            td > table td { border: none; }
+            td > table td:nth-child(1) { font-size: 16px; text-align: center; white-space: nowrap; }
+            td > table td:nth-child(2) { font-size: 24px; text-align: left; white-space: nowrap; }
+        ''')
         html_file.write('</style>\n')
+
         html_file.write(f'<title>{formatted_date_title}</title>\n</head>\n<body>\n')
 
-        # Print button with .beebutton class, centered with a <p> underneath
+        # Print button
         html_file.write('<div class="print-button-container"><a href="javascript:window.print()" class="beebutton">Print</a></div>\n')
-        html_file.write('<p></p>\n')  # Blank line for spacing
+        html_file.write('<p></p>\n')
 
         html_file.write(f'<h4 style="text-align: center;">BeeJumble for {formatted_date_header}<br>'
                         'Brought to you by <a href="https://thegamebureau.com/beebox" target="_blank">thegamebureau.com</a></h4>\n')
         html_file.write('<div class="title-spacer"></div>\n<table>\n')
 
-        max_columns = 8
-        num_columns = min(max_columns, max(1, (len(words) + 14) // 15))
-        words_per_column = (len(words) + num_columns - 1) // num_columns
+        max_columns = 3  # Three words per row
+        words_per_row = (len(words) + max_columns - 1) // max_columns
 
-        for i in range(words_per_column):
+        # Generate rows of words
+        for i in range(words_per_row):
             html_file.write('<tr>\n')
-            for j in range(num_columns):
-                index = i + j * words_per_column
+            for j in range(max_columns):
+                index = i * max_columns + j
                 if index < len(words):
-                    html_file.write(
-                        f'<td><table><tr>'
-                        f'<td style="font-size: 16px; text-align: center; white-space: nowrap;">{words[index]}</td>'
-                        f'<td style="font-size: 24px; text-align: left; white-space: nowrap;">{lengths[index]}</td>'
-                        f'</tr></table></td>\n'
-                    )
+                    word = words[index]
+                    length = lengths[index]
+                    html_file.write('<td>\n<table>\n<tr>\n')
+                    html_file.write(f'<td>{word}</td>\n')  # Scrambled word
+                    html_file.write(f'<td>{"_ " * int(length)}</td>\n')  # Placeholder underscores
+                    html_file.write('</tr>\n</table>\n</td>\n')
                 else:
-                    html_file.write('<td></td>\n')
+                    html_file.write('<td></td>\n')  # Empty cell
             html_file.write('</tr>\n')
         html_file.write('</table>\n</body>\n</html>')
 
     print(f"HTML file generated successfully as '{html_file_path}'")
+
+# FTP upload function
+def upload_file_to_ftp(local_file_path, remote_file_path):
+    try:
+        ftp = FTP()
+        ftp.connect(FTP_HOST, FTP_PORT)
+        ftp.login(user=FTP_USER, passwd=FTP_PASS)
+        print(f"Connected to FTP server: {FTP_HOST}")
+        
+        with open(local_file_path, 'rb') as file:
+            ftp.storbinary(f"STOR {remote_file_path}", file)
+        
+        print(f"Uploaded {local_file_path} to {remote_file_path}")
+        ftp.quit()
+        return True
+    except Exception as e:
+        print(f"FTP upload failed: {e}")
+        return False
 
 # Run the data scraping, parsing, and HTML generation
 if scrape_nyt_spelling_bee(xml_file_path):
@@ -147,61 +193,39 @@ else:
 
 # Add button to index.html if not already present
 long_date = current_date.strftime("%A, %B %d, %Y")
-date_for_link = current_date.strftime("%Y%m%d")
 new_button_html = f'''
-<a href="http://tii.ezv.temporary.site/beejumble/{date_for_link}BEEJUMBLE.html" class="beebutton">{long_date}</a>
+<a href="https://tii.ezv.temporary.site/beejumble/archive/{html_file_name}" class="beebutton">{long_date}</a>
 '''
 
-index_path = script_folder / "index.html"
-with open(index_path, "r", encoding="utf-8") as file:
-    soup = BeautifulSoup(file, "html.parser")
+if index_path.exists():
+    with open(index_path, "r", encoding="utf-8") as file:
+        soup = BeautifulSoup(file, "html.parser")
 
-button_exists = soup.find("a", href=f"http://tii.ezv.temporary.site/beejumble/{date_for_link}BEEJUMBLE.html")
-if button_exists:
-    print("Button for today's date already exists. No new button added.")
+    # Check if a button with the specific link already exists
+    button_exists = soup.find("a", href=f"https://tii.ezv.temporary.site/beejumble/archive/{html_file_name}")
+    
+    if not button_exists:
+        h3_tag = soup.find("h3")
+        if h3_tag:
+            h3_tag.insert_after(BeautifulSoup(new_button_html, "html.parser"))
+        with open(index_path, "w", encoding="utf-8") as file:
+            file.write(str(soup))
+        print("Button added successfully to index.html")
+    else:
+        print("Button already exists in index.html")
 else:
-    h3_tag = soup.find("h3", string="Bee Jumble is a twist on The New York Times Spelling Bee game. It takes the Spelling Bee words and jumbles them into a different game. It can also be used as hints for the Bee.")
-    if h3_tag:
-        h3_tag.insert_after(BeautifulSoup(new_button_html, "html.parser"))
-    with open(index_path, "w", encoding="utf-8") as file:
-        file.write(str(soup))
-    print("Button added successfully to index.html")
+    print("index.html does not exist.")
 
-# Upload all .html files to FTP
-ftp_server = "ftp.tii.ezv.temporary.site"
-ftp_username = "beejumble@tii.ezv.temporary.site"
-ftp_password = "{jTm-6zL$r_h"
-ftp_directory = ""
+# FTP Uploads
+index_uploaded = upload_file_to_ftp(str(index_path), "index.html")  # Upload index.html to the root
+html_uploaded = upload_file_to_ftp(str(html_file_path), f"archive/{html_file_name}")  # Upload HTML file to /archive
 
-try:
-    ftp = ftplib.FTP(ftp_server)
-    ftp.login(user=ftp_username, passwd=ftp_password)
-    ftp.cwd(ftp_directory)
-    print(f"Connected to FTP server and changed to directory: {ftp_directory}")
-
-    for file_name in os.listdir():
-        if file_name.endswith('.html'):
-            with open(file_name, 'rb') as file:
-                ftp.storbinary(f'STOR {file_name}', file)
-                print(f"Uploaded: {file_name}")
-
-except ftplib.all_errors as e:
-    print(f"FTP error: {e}. Continuing with the rest of the code.")
-finally:
-    try:
-        ftp.quit()
-    except:
-        pass
-    print("FTP connection closed.")
-
-# Delete .html and .xml files except for index.html
-for file_name in os.listdir():
-    if (file_name.endswith('.html') or file_name.endswith('.xml')) and file_name != 'index.html':
-        os.remove(file_name)
-        print(f"Deleted: {file_name}")
-
-print("Cleanup completed.")
-
-# Open the main URL in the default browser
-url = "tii.ezv.temporary.site/beejumble"
-webbrowser.open(url)
+# If both files were uploaded successfully, delete temporary files
+if index_uploaded and html_uploaded:
+    for file in script_folder.glob("*JUMBLE.xml"):
+        file.unlink()
+    for file in script_folder.glob("*JUMBLE.html"):
+        file.unlink()
+    print("Temporary files deleted.")
+else:
+    print("Not all files were uploaded successfully. Temporary files retained.")
