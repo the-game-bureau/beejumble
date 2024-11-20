@@ -7,6 +7,7 @@ import random
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from ftplib import FTP
+import webbrowser
 
 # FTP Server Details
 FTP_HOST = "ftp.tii.ezv.temporary.site"
@@ -229,3 +230,10 @@ if index_uploaded and html_uploaded:
     print("Temporary files deleted.")
 else:
     print("Not all files were uploaded successfully. Temporary files retained.")
+
+
+# URL to open
+url = "https://tii.ezv.temporary.site/beejumble/"
+
+# Open the URL in the default web browser
+webbrowser.open(url)
