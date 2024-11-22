@@ -225,18 +225,9 @@ html_uploaded = upload_file_to_ftp(str(html_file_path), f"archive/{html_file_nam
 # If both files were uploaded successfully, delete and move temporary files
 if index_uploaded and html_uploaded:
     # Delete all XML files matching the pattern *JUMBLE.xml
-    for file in script_folder.glob("*JUMBLE.xml"):
+    for file in script_folder.glob("*JUMBLE.*ml"):
         file.unlink()
-    print("XML files deleted.")
-
-    # Move all HTML files matching the pattern *JUMBLE.html to an archive folder
-    archive_folder = script_folder / "archive"
-    archive_folder.mkdir(exist_ok=True)  # Create the archive folder if it doesn't exist
-
-    for file in script_folder.glob("*JUMBLE.html"):
-        destination = archive_folder / file.name
-        move(str(file), destination)
-        print(f"Moved {file.name} to archive folder: {destination}")
+    print("files deleted.")
 
 else:
     print("Not all files were uploaded successfully. Temporary files retained.")
