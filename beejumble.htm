@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bee Jumble</title>
+  <link rel="icon" href="bee.ico" type="image/x-icon">
+  <link rel="shortcut icon" href="bee.ico" type="image/x-icon">
+  <style>
+    body {
+      background: #fff;
+      margin: 0;
+      padding: 0;
+    }
+
+    #layoutTable {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 2em auto;
+      padding: 1em;
+      text-align: left;
+    }
+
+    h1 {
+      font-size: 2em;
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 0.5em;
+      font-family: 'Georgia', serif;
+    }
+
+    #subtitle {
+      text-align: center;
+      font-style: italic;
+      margin-bottom: 1em;
+      font-size: 1.1em;
+      font-family: 'Georgia', serif;
+    }
+
+    
+  </style>
+</head>
+<body>
+  <div id="layoutTable">
+        <div id="subtitle"></div>
+
+    <select id="dateSelector"></select>
+    <button id="printBtn" onclick="printPuzzle()">🖨️ Print Puzzle</button>
+
+    <div id="puzzleWrapper">
+      <div class="puzzle" id="puzzle"></div>
+    </div>
+  </div>
+
+  <script>
+    function formatDate(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function updateSubtitle(dateStr) {
+      const date = new Date(dateStr);
+      const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      const monthNames = ["January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"];
+      const dow = dayNames[date.getDay()];
+      const month = monthNames[date.getMonth()];
+      const day = String(date.getDate()).padStart(2, '0');
+      const year = date.getFullYear();
+      document.getElementById("subtitle").textContent =
+        `TheGameBureau.com presents the Spelling Bee Jumble Worksheet for ${dow}, ${month} ${day}, ${year}`;
+    }
+
+    function populateDateSelector() {
+      const selector = document.getElementById("dateSelector");
+      const startDate = new Date("2018-05-09");
+      const today = new Date();
+      const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const dates = [];
+
+      let d = new Date(endDate);
+      while (d >= startDate) {
+        dates.push(new Date(d));
+        d.setDate(d.getDate() - 1);
+      }
+
+      for (let date of dates) {
+        const option = document.createElement("option");
+        const dateStr = formatDate(date);
+        option.value = dateStr;
+        const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const dow = dayNames[date.getDay()];
+        const month = monthNames[date.getMonth()];
+        const day = String(date.getDate()).padStart(2, '0');
+        const year = date.getFullYear();
+        option.textContent = `${dow}, ${month} ${day}, ${year}`;
+        selector.appendChild(option);
+      }
+
+      const urlDate = new URLSearchParams(window.location.search).get("date");
+      const activeDate = urlDate || formatDate(endDate);
+      selector.value = activeDate;
+      updateSubtitle(activeDate);
+      loadPuzzle(activeDate);
+    }
+
+    function loadPuzzle(dateStr) {
+      fetch("jumbledbees.xml")
+        .then(response => response.text())
+        .then(xmlText => {
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+          const puzzles = xmlDoc.getElementsByTagName("puzzle");
+          const puzzleDiv = document.getElementById("puzzle");
+          puzzleDiv.innerHTML = "";
+
+          for (let puzzle of puzzles) {
+            if (puzzle.getAttribute("date") === dateStr) {
+              const letters = puzzle.getAttribute("letters");
+              if (letters) {
+                const letterRow = document.createElement("div");
+                letterRow.className = "letters";
+                for (let i = 1; i <= 7; i++) {
+                  const hex = document.createElement("div");
+                  hex.className = "hex";
+                  const tag = `letter${i}`;
+                  const val = puzzle.getElementsByTagName(tag)[0]?.textContent || "0";
+                  const letter = letters.charAt(i - 1);
+                  hex.innerHTML = `${letter}<sup>${val}</sup>`;
+                  letterRow.appendChild(hex);
+                }
+                puzzleDiv.appendChild(letterRow);
+              }
+
+              const words = Array.from(puzzle.getElementsByTagName("word"));
+              words.sort((a, b) => {
+                const lenA = parseInt(a.getAttribute("length"));
+                const lenB = parseInt(b.getAttribute("length"));
+                return lenA === lenB ? a.textContent.localeCompare(b.textContent) : lenA - lenB;
+              });
+
+              for (let wordEl of words) {
+                const row = document.createElement("div");
+                row.className = "word-row";
+
+                const length = parseInt(wordEl.getAttribute("length"));
+                const word = wordEl.textContent.trim();
+
+                for (let i = 0; i < length; i++) {
+                  const stack = document.createElement("div");
+                  stack.className = "letter-stack";
+
+                  const above = document.createElement("div");
+                  above.className = "letter-above";
+                  above.textContent = word[i] || " ";
+
+                  const box = document.createElement("div");
+                  box.className = "letter-box";
+
+                  stack.appendChild(above);
+                  stack.appendChild(box);
+                  row.appendChild(stack);
+                }
+
+                puzzleDiv.appendChild(row);
+              }
+              break;
+            }
+          }
+        });
+    }
+
+    function printPuzzle() {
+      window.print();
+    }
+
+    document.getElementById("dateSelector").addEventListener("change", function () {
+      const date = this.value;
+      const newUrl = `${window.location.pathname}?date=${date}`;
+      window.location.href = newUrl;
+    });
+
+    populateDateSelector();
+  </script>
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bee Jumble</title>
+  <style>
+    body {
+      font-family: 'Georgia', serif;
+      background: #fffdf6;
+      color: #111;
+      margin: 2em auto;
+      max-width: 800px;
+      padding: 1.5em;
+      line-height: 1.6;
+      border: 1px solid #ddd;
+      box-shadow: 0 0 8px rgba(0,0,0,0.05);
+    }
+
+    h1 {
+      font-size: 2em;
+      text-align: center;
+      font-weight: bold;
+      color: #222;
+      margin-bottom: 1em;
+    }
+
+    #controls {
+      text-align: center;
+      margin-bottom: 1em;
+    }
+
+    #currentWord {
+      font-size: 1.5em;
+      font-weight: bold;
+      margin: 0.5em 0;
+      text-align: center;
+    }
+
+    .honeycomb {
+      display: grid;
+      grid-template-columns: repeat(3, 70px);
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 2em;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    .hex {
+      width: 60px;
+      height: 52px;
+      background: #ffeb3b;
+      clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      font-size: 1.3em;
+      color: #000;
+      font-family: 'Georgia', serif;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.2s;
+    }
+
+    .hex:hover {
+      transform: scale(1.1);
+    }
+
+    @keyframes fadeIn {
+      0% { opacity: 0; transform: scale(0.8); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .btn {
+      padding: 0.5em 1em;
+      margin: 0.5em;
+      font-size: 1em;
+      cursor: pointer;
+    }
+
+    .puzzle {
+      margin-top: 1em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Bee Jumble</h1>
+
+  <div id="controls">
+    <select id="dateSelector"></select>
+    <button id="printBtn" onclick="window.print()">🖨️ Print Bee Jumble</button>
+  </div>
+
+  <div id="currentWord"></div>
+  <div class="honeycomb" id="honeycomb"></div>
+
+  <div style="text-align: center;">
+    <button class="btn" onclick="submitWord()">Submit</button>
+    <button class="btn" onclick="clearWord()">Clear</button>
+  </div>
+
+  <div class="puzzle" id="puzzle"></div>
+
+  <script>
+    let currentWord = '';
+    let validWords = [];
+
+    function formatDate(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function populateDateSelector() {
+      const selector = document.getElementById("dateSelector");
+      const startDate = new Date("2018-05-09");
+      const today = new Date();
+      const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const dates = [];
+
+      let d = new Date(endDate);
+      while (d >= startDate) {
+        dates.push(new Date(d));
+        d.setDate(d.getDate() - 1);
+      }
+
+      for (let date of dates) {
+        const option = document.createElement("option");
+        const dateStr = formatDate(date);
+        option.value = dateStr;
+        const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const dow = dayNames[date.getDay()];
+        const month = monthNames[date.getMonth()];
+        const day = String(date.getDate()).padStart(2, '0');
+        const year = date.getFullYear();
+        option.textContent = `${dow}, ${month} ${day}, ${year}`;
+        selector.appendChild(option);
+      }
+
+      const urlDate = new URLSearchParams(window.location.search).get("date");
+      if (urlDate) {
+        selector.value = urlDate;
+      } else {
+        selector.value = formatDate(endDate);
+        loadPuzzle(formatDate(endDate));
+      }
+    }
+
+    function loadPuzzle(dateStr) {
+      fetch("jumbledbees.xml")
+        .then(response => response.text())
+        .then(xmlText => {
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+          const puzzles = xmlDoc.getElementsByTagName("puzzle");
+          const puzzleDiv = document.getElementById("puzzle");
+          const honeycomb = document.getElementById("honeycomb");
+          puzzleDiv.innerHTML = '';
+          honeycomb.innerHTML = '';
+          validWords = [];
+
+          for (let puzzle of puzzles) {
+            if (puzzle.getAttribute("date") === dateStr) {
+              const letters = puzzle.getAttribute("letters");
+              const words = Array.from(puzzle.getElementsByTagName("word")).map(w => w.textContent.toUpperCase());
+              validWords = words;
+              
+              // Honeycomb layout: center is letters[0], rest around
+              const layout = [1, 2, 0, 3, 4, 5, 6];
+              layout.forEach(i => {
+                const hex = document.createElement("div");
+                hex.className = "hex";
+                hex.textContent = letters[i];
+                hex.onclick = () => addLetter(letters[i]);
+                honeycomb.appendChild(hex);
+              });
+
+              words.sort((a, b) => a.length - b.length || a.localeCompare(b));
+              for (let word of words) {
+                const row = document.createElement("div");
+                row.className = "word-row";
+                const label = document.createElement("div");
+                label.className = "word-label";
+                label.textContent = word;
+                row.appendChild(label);
+                for (let i = 0; i < word.length; i++) {
+                  const box = document.createElement("div");
+                  box.className = "letter-box";
+                  row.appendChild(box);
+                }
+                puzzleDiv.appendChild(row);
+              }
+              break;
+            }
+          }
+        });
+    }
+
+    function addLetter(letter) {
+      currentWord += letter;
+      document.getElementById("currentWord").textContent = currentWord;
+    }
+
+    function clearWord() {
+      currentWord = '';
+      document.getElementById("currentWord").textContent = '';
+    }
+
+    function submitWord() {
+      const word = currentWord.toUpperCase();
+      if (validWords.includes(word)) {
+        alert(`✅ Correct: ${word}`);
+      } else {
+        alert(`❌ Not valid: ${word}`);
+      }
+      clearWord();
+    }
+
+    document.getElementById("dateSelector").addEventListener("change", function () {
+      const date = this.value;
+      const newUrl = `${window.location.pathname}?date=${date}`;
+      window.location.href = newUrl;
+    });
+
+    populateDateSelector();
+    const selectedDate = new URLSearchParams(window.location.search).get("date");
+    if (selectedDate) {
+      loadPuzzle(selectedDate);
+    }
+  </script>
+</body>
+</html>
