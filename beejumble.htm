@@ -4,56 +4,113 @@
   <meta charset="UTF-8">
   <title>Bee Jumble</title>
   <link rel="icon" href="bee.ico" type="image/x-icon">
-  <link rel="shortcut icon" href="bee.ico" type="image/x-icon">
   <style>
     body {
-      background: #fff;
-      margin: 0;
-      padding: 0;
-    }
-
-    #layoutTable {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      font-family: 'Georgia', serif;
+      background: #fffdf6;
+      color: #111;
       margin: 2em auto;
-      padding: 1em;
-      text-align: left;
+      max-width: 800px;
+      padding: 1.5em;
+      line-height: 1.6;
+      border: 1px solid #ddd;
+      box-shadow: 0 0 8px rgba(0,0,0,0.05);
     }
 
     h1 {
       font-size: 2em;
       text-align: center;
       font-weight: bold;
-      margin-bottom: 0.5em;
-      font-family: 'Georgia', serif;
+      color: #222;
+      margin-bottom: 0.2em;
     }
 
-    #subtitle {
+    p.subtitle {
+      font-size: 1em;
       text-align: center;
-      font-style: italic;
-      margin-bottom: 1em;
-      font-size: 1.1em;
-      font-family: 'Georgia', serif;
+      margin: 0.2em 0 1em;
     }
 
-    
+    p.description {
+      font-size: 1em;
+      text-align: center;
+      margin-bottom: 1.5em;
+    }
+
+    #controls {
+      text-align: center;
+      margin-bottom: 1em;
+    }
+
+    #currentWord {
+      font-size: 1.5em;
+      font-weight: bold;
+      margin: 0.5em 0;
+      text-align: center;
+    }
+
+    .honeycomb {
+      display: grid;
+      grid-template-columns: repeat(3, 70px);
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 2em;
+    }
+
+    .hex {
+      width: 60px;
+      height: 52px;
+      background: #ffeb3b;
+      clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      font-size: 1.3em;
+      color: #000;
+      font-family: 'Georgia', serif;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .btn {
+      padding: 0.5em 1em;
+      margin: 0.5em;
+      font-size: 1em;
+      cursor: pointer;
+    }
+
+    .puzzle {
+      margin-top: 1em;
+    }
   </style>
 </head>
 <body>
-  <div id="layoutTable">
-        <div id="subtitle"></div>
+  <h1>Bee Jumble</h1>
+  <p class="subtitle" id="worksheetTitle">TheGameBureau.com presents the Bee Jumble Worksheet</p>
+  <p class="description">
+    Bee Jumble is a twist on <em>The New York Times Spelling Bee</em> game. It takes the Spelling Bee words and jumbles them into a different game. It can also be used as hints for the Bee.
+  </p>
 
+  <div id="controls">
     <select id="dateSelector"></select>
-    <button id="printBtn" onclick="printPuzzle()">🖨️ Print Puzzle</button>
-
-    <div id="puzzleWrapper">
-      <div class="puzzle" id="puzzle"></div>
-    </div>
+    <button id="printBtn" onclick="window.print()">🖨️ Print Bee Jumble</button>
   </div>
 
+  <div id="currentWord"></div>
+  <div class="honeycomb" id="honeycomb"></div>
+
+  <div style="text-align: center;">
+    <button class="btn" onclick="submitWord()">Submit</button>
+    <button class="btn" onclick="clearWord()">Clear</button>
+  </div>
+
+  <div class="puzzle" id="puzzle"></div>
+
   <script>
+    let currentWord = '';
+    let validWords = [];
+
     function formatDate(date) {
       const y = date.getFullYear();
       const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -61,17 +118,15 @@
       return `${y}-${m}-${d}`;
     }
 
-    function updateSubtitle(dateStr) {
+    function formatWorksheetTitle(dateStr) {
       const date = new Date(dateStr);
       const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-      const monthNames = ["January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"];
+      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
       const dow = dayNames[date.getDay()];
       const month = monthNames[date.getMonth()];
-      const day = String(date.getDate()).padStart(2, '0');
+      const day = date.getDate();
       const year = date.getFullYear();
-      document.getElementById("subtitle").textContent =
-        `TheGameBureau.com presents the Spelling Bee Jumble Worksheet for ${dow}, ${month} ${day}, ${year}`;
+      return `TheGameBureau.com presents the Bee Jumble Worksheet for ${dow}, ${month} ${day}, ${year}`;
     }
 
     function populateDateSelector() {
@@ -102,10 +157,10 @@
       }
 
       const urlDate = new URLSearchParams(window.location.search).get("date");
-      const activeDate = urlDate || formatDate(endDate);
-      selector.value = activeDate;
-      updateSubtitle(activeDate);
-      loadPuzzle(activeDate);
+      const defaultDate = urlDate || formatDate(endDate);
+      selector.value = defaultDate;
+      loadPuzzle(defaultDate);
+      document.getElementById("worksheetTitle").textContent = formatWorksheetTitle(defaultDate);
     }
 
     function loadPuzzle(dateStr) {
@@ -116,56 +171,39 @@
           const xmlDoc = parser.parseFromString(xmlText, "application/xml");
           const puzzles = xmlDoc.getElementsByTagName("puzzle");
           const puzzleDiv = document.getElementById("puzzle");
-          puzzleDiv.innerHTML = "";
+          const honeycomb = document.getElementById("honeycomb");
+          puzzleDiv.innerHTML = '';
+          honeycomb.innerHTML = '';
+          validWords = [];
 
           for (let puzzle of puzzles) {
             if (puzzle.getAttribute("date") === dateStr) {
               const letters = puzzle.getAttribute("letters");
-              if (letters) {
-                const letterRow = document.createElement("div");
-                letterRow.className = "letters";
-                for (let i = 1; i <= 7; i++) {
-                  const hex = document.createElement("div");
-                  hex.className = "hex";
-                  const tag = `letter${i}`;
-                  const val = puzzle.getElementsByTagName(tag)[0]?.textContent || "0";
-                  const letter = letters.charAt(i - 1);
-                  hex.innerHTML = `${letter}<sup>${val}</sup>`;
-                  letterRow.appendChild(hex);
-                }
-                puzzleDiv.appendChild(letterRow);
-              }
+              const words = Array.from(puzzle.getElementsByTagName("word")).map(w => w.textContent.toUpperCase());
+              validWords = words;
 
-              const words = Array.from(puzzle.getElementsByTagName("word"));
-              words.sort((a, b) => {
-                const lenA = parseInt(a.getAttribute("length"));
-                const lenB = parseInt(b.getAttribute("length"));
-                return lenA === lenB ? a.textContent.localeCompare(b.textContent) : lenA - lenB;
+              const layout = [1, 2, 0, 3, 4, 5, 6];
+              layout.forEach(i => {
+                const hex = document.createElement("div");
+                hex.className = "hex";
+                hex.textContent = letters[i];
+                hex.onclick = () => addLetter(letters[i]);
+                honeycomb.appendChild(hex);
               });
 
-              for (let wordEl of words) {
+              words.sort((a, b) => a.length - b.length || a.localeCompare(b));
+              for (let word of words) {
                 const row = document.createElement("div");
                 row.className = "word-row";
-
-                const length = parseInt(wordEl.getAttribute("length"));
-                const word = wordEl.textContent.trim();
-
-                for (let i = 0; i < length; i++) {
-                  const stack = document.createElement("div");
-                  stack.className = "letter-stack";
-
-                  const above = document.createElement("div");
-                  above.className = "letter-above";
-                  above.textContent = word[i] || " ";
-
+                const label = document.createElement("div");
+                label.className = "word-label";
+                label.textContent = word;
+                row.appendChild(label);
+                for (let i = 0; i < word.length; i++) {
                   const box = document.createElement("div");
                   box.className = "letter-box";
-
-                  stack.appendChild(above);
-                  stack.appendChild(box);
-                  row.appendChild(stack);
+                  row.appendChild(box);
                 }
-
                 puzzleDiv.appendChild(row);
               }
               break;
@@ -174,8 +212,24 @@
         });
     }
 
-    function printPuzzle() {
-      window.print();
+    function addLetter(letter) {
+      currentWord += letter;
+      document.getElementById("currentWord").textContent = currentWord;
+    }
+
+    function clearWord() {
+      currentWord = '';
+      document.getElementById("currentWord").textContent = '';
+    }
+
+    function submitWord() {
+      const word = currentWord.toUpperCase();
+      if (validWords.includes(word)) {
+        alert(`✅ Correct: ${word}`);
+      } else {
+        alert(`❌ Not valid: ${word}`);
+      }
+      clearWord();
     }
 
     document.getElementById("dateSelector").addEventListener("change", function () {
@@ -185,6 +239,10 @@
     });
 
     populateDateSelector();
+    const selectedDate = new URLSearchParams(window.location.search).get("date");
+    if (selectedDate) {
+      document.getElementById("worksheetTitle").textContent = formatWorksheetTitle(selectedDate);
+    }
   </script>
 </body>
 </html>
