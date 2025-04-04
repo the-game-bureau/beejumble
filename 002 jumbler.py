@@ -10,15 +10,15 @@
 #
 # 2. SCRAMBLE:
 #    - For any puzzle not already marked as "jumbled", it scrambles the letters
-#      of each word (leaving very short words unchanged).
-#    - Ensures the scrambled word is not identical to the original.
+#      of each word.
 #    - Sets a `jumbled="true"` attribute on each processed puzzle.
+#    - Adds an `original_word` attribute from bees.xml to each word.
 #
 # All puzzles are sorted by date and saved in a compact, readable XML format.
 #
 # Output: jumbledbees.xml (ready for print/play or game display)
 # -------------------------------------------------------------------
- 
+
 import os
 import xml.etree.ElementTree as ET
 import random
@@ -100,6 +100,7 @@ def copy_and_scramble_puzzles():
         target_puzzles = []
 
     existing_keys = {get_puzzle_key(p): p for p in target_puzzles}
+    source_map = {get_puzzle_key(p): p for p in source_puzzles}
     added = 0
 
     # Step 1: Add missing puzzles
@@ -114,26 +115,42 @@ def copy_and_scramble_puzzles():
     else:
         print("✅ No missing puzzles found.")
 
-    # Step 2: Scramble unjumbled puzzles
+    # Step 2: Scramble or patch original_word from source
     scrambled_count = 0
+    patched_originals = 0
+
     for puzzle in target_root.findall("puzzle"):
-        if puzzle.attrib.get("jumbled") == "true":
-            continue
+        key = get_puzzle_key(puzzle)
+        source_puzzle = source_map.get(key)
+        original_words = [w.text for w in source_puzzle.findall("word")] if source_puzzle is not None else []
 
-        for word_el in puzzle.findall("word"):
-            original = word_el.text or ""
-            scrambled = scramble_word(original)
-            word_el.text = scrambled
-
-        sort_words_in_puzzle(puzzle)
-        puzzle.attrib["jumbled"] = "true"
-        scrambled_count += 1
+        if puzzle.attrib.get("jumbled") != "true":
+            # Jumble + add original_word from source
+            for idx, word_el in enumerate(puzzle.findall("word")):
+                original = original_words[idx] if idx < len(original_words) else (word_el.text or "")
+                scrambled = scramble_word(original)
+                word_el.text = scrambled
+                word_el.set("original_word", original)
+            sort_words_in_puzzle(puzzle)
+            puzzle.attrib["jumbled"] = "true"
+            scrambled_count += 1
+        else:
+            # Already jumbled — just ensure original_word is patched from bees.xml
+            for idx, word_el in enumerate(puzzle.findall("word")):
+                if "original_word" not in word_el.attrib:
+                    original = original_words[idx] if idx < len(original_words) else (word_el.text or "")
+                    word_el.set("original_word", original)
+                    patched_originals += 1
 
     if scrambled_count > 0:
         print(f"🔀 Jumbled {scrambled_count} puzzle(s).")
     else:
         print("✨ All puzzles already jumbled.")
 
+    if patched_originals > 0:
+        print(f"🛠️ Patched {patched_originals} word(s) with original_word from source.")
+
+    # Step 3: Save
     target_root[:] = sorted(target_root, key=lambda p: p.attrib.get("date", ""))
     indent(target_root)
     target_tree.write(TARGET_FILE, encoding="utf-8", xml_declaration=True)

@@ -1,163 +1,244 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Bee Jumble</title>
-  <link rel="icon" href="bee.ico" type="image/x-icon">
+  <link rel="icon" href="bee.ico" type="image/x-icon" />
   <style>
     body {
       font-family: 'Georgia', serif;
-      background: #fffdf6;
+      background: #fff;
       color: #111;
-      margin: 2em auto;
-      max-width: 800px;
+      margin: 0;
       padding: 1.5em;
       line-height: 1.6;
-      border: 1px solid #ddd;
-      box-shadow: 0 0 8px rgba(0,0,0,0.05);
+      width: 100%;
     }
 
-    h1 {
-      font-size: 2em;
+    .subtitle {
       text-align: center;
-      font-weight: bold;
-      color: #222;
-      margin-bottom: 0.2em;
-    }
-
-    p.subtitle {
       font-size: 1em;
-      text-align: center;
-      margin: 0.2em 0 1em;
-    }
-
-    p.description {
-      font-size: 1em;
-      text-align: center;
-      margin-bottom: 1.5em;
-    }
-
-    #controls {
-      text-align: center;
       margin-bottom: 1em;
     }
 
-    #currentWord {
-      font-size: 1.5em;
-      font-weight: bold;
-      margin: 0.5em 0;
+    table.header-table {
+      width: 800px;
+      margin: 0 auto;
+      table-layout: fixed;
+      border-spacing: 0;
+    }
+
+    table.header-table td {
+      vertical-align: top;
+    }
+
+    table.header-table td:first-child,
+    table.header-table td:last-child {
+      width: 200px;
+    }
+
+    table.header-table td:first-child {
+      text-align: right;
+    }
+
+    table.header-table td:last-child {
+      text-align: left;
+    }
+
+    .nav-controls {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+
+    #dateSelector {
+      font-size: 1em;
+      padding: 0.3em;
+      margin: 0;
+    }
+
+    #printBtn {
+      font-size: 1em;
+      padding: 0.3em 0.6em;
+      cursor: pointer;
+      margin: 0;
+    }
+
+    .honeycomb-row {
+      width: 800px;
+      margin: 1em auto;
       text-align: center;
     }
 
     .honeycomb {
-      display: grid;
-      grid-template-columns: repeat(3, 70px);
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 2em;
-    }
-
-    .hex {
-      width: 60px;
-      height: 52px;
-      background: #ffeb3b;
-      clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
       display: flex;
+      gap: 10px;
+      flex-wrap: nowrap;
       justify-content: center;
-      align-items: center;
-      font-weight: bold;
-      font-size: 1.3em;
-      color: #000;
-      font-family: 'Georgia', serif;
-      cursor: pointer;
-      user-select: none;
     }
 
-    .btn {
-      padding: 0.5em 1em;
-      margin: 0.5em;
-      font-size: 1em;
-      cursor: pointer;
+    svg {
+      display: block;
+    }
+
+    hr.separator {
+      width: 800px;
+      margin: 2em auto;
+      border: 0;
+      border-top: 1px solid #ccc;
     }
 
     .puzzle {
-      margin-top: 1em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2em;
+    }
+
+    h4 {
+      text-align: center;
+      margin: 1em 0 0.25em;
+      font-size: 1.1em;
+      font-weight: normal;
+    }
+
+    .puzzle-columns {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .puzzle-column {
+      display: flex;
+      flex-direction: column;
+      padding-right: 1em;
+      margin-right: 1em;
+      border-right: 1px solid #ccc;
+      flex: 1 1 calc(25% - 1em);
+      max-width: calc(25% - 1em);
+      box-sizing: border-box;
+    }
+
+    .puzzle-column:nth-child(4n) {
+      border-right: none;
+      margin-right: 0;
+      padding-right: 0;
+    }
+
+    .word-row {
+      display: flex;
+      align-items: center;
+      margin: 0.5em 0;
+      flex-wrap: wrap;
+    }
+
+    .letter-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0 4px;
+    }
+
+    .letter-label {
+      font-size: 1em;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .letter-box {
+      width: 24px;
+      height: 24px;
+      border: 1px solid #aaa;
+      text-align: center;
+      line-height: 24px;
     }
   </style>
 </head>
 <body>
-  <h1>Bee Jumble</h1>
-  <p class="subtitle" id="worksheetTitle">TheGameBureau.com presents the Bee Jumble Worksheet</p>
-  <p class="description">
-    Bee Jumble is a twist on <em>The New York Times Spelling Bee</em> game. It takes the Spelling Bee words and jumbles them into a different game. It can also be used as hints for the Bee.
-  </p>
-
-  <div id="controls">
-    <select id="dateSelector"></select>
-    <button id="printBtn" onclick="window.print()">🖨️ Print Bee Jumble</button>
+  <div class="subtitle" id="worksheetTitle">
+    TheGameBureau.com presents the Bee Jumble Worksheet
   </div>
 
-  <div id="currentWord"></div>
-  <div class="honeycomb" id="honeycomb"></div>
+  <table class="header-table">
+    <tr>
+      <td>
+        <div class="nav-controls">
+          <button id="prevDayBtn">←</button>
+          <select id="dateSelector"></select>
+          <button id="nextDayBtn">→</button>
+        </div>
+      </td>
+      <td></td>
+      <td>
+        <button id="printBtn" onclick="window.print()">🖨️ Print</button>
+      </td>
+    </tr>
+  </table>
 
-  <div style="text-align: center;">
-    <button class="btn" onclick="submitWord()">Submit</button>
-    <button class="btn" onclick="clearWord()">Clear</button>
+  <div class="honeycomb-row">
+    <div class="honeycomb" id="honeycomb"></div>
   </div>
+
+  <hr class="separator" />
 
   <div class="puzzle" id="puzzle"></div>
 
   <script>
-    let currentWord = '';
-    let validWords = [];
-
     function formatDate(date) {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const d = String(date.getDate()).padStart(2, '0');
-      return `${y}-${m}-${d}`;
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     }
 
     function formatWorksheetTitle(dateStr) {
       const date = new Date(dateStr);
-      const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-      const dow = dayNames[date.getDay()];
-      const month = monthNames[date.getMonth()];
-      const day = date.getDate();
-      const year = date.getFullYear();
-      return `TheGameBureau.com presents the Bee Jumble Worksheet for ${dow}, ${month} ${day}, ${year}`;
+      const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      return `TheGameBureau.com presents the Bee Jumble Worksheet for ${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+    }
+
+    function createHexSVG(letter, count, isYellow = false) {
+      const svgNS = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(svgNS, "svg");
+      svg.setAttribute("width", "60");
+      svg.setAttribute("height", "52");
+      svg.setAttribute("viewBox", "0 0 100 86");
+
+      const polygon = document.createElementNS(svgNS, "polygon");
+      polygon.setAttribute("points", "50,0 93,25 93,61 50,86 7,61 7,25");
+      polygon.setAttribute("fill", isYellow ? "#f7da21" : "#e0e0e0");
+      polygon.setAttribute("stroke", isYellow ? "#000" : "#999");
+      polygon.setAttribute("stroke-width", isYellow ? "3" : "1");
+      svg.appendChild(polygon);
+
+      const text = document.createElementNS(svgNS, "text");
+      text.setAttribute("x", "50%");
+      text.setAttribute("y", "50%");
+      text.setAttribute("text-anchor", "middle");
+      text.setAttribute("font-family", "Georgia");
+      text.setAttribute("font-size", "32");
+      text.setAttribute("font-weight", "bold");
+      text.setAttribute("fill", "#000");
+      text.setAttribute("dominant-baseline", "middle");
+      text.innerHTML = `${letter}<tspan dx="4" dy="0" font-size="22" alignment-baseline="middle">${count}</tspan>`;
+
+      svg.appendChild(text);
+      return svg;
     }
 
     function populateDateSelector() {
       const selector = document.getElementById("dateSelector");
       const startDate = new Date("2018-05-09");
       const today = new Date();
-      const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const dates = [];
-
-      let d = new Date(endDate);
-      while (d >= startDate) {
-        dates.push(new Date(d));
-        d.setDate(d.getDate() - 1);
-      }
-
-      for (let date of dates) {
+      for (let d = new Date(today); d >= startDate; d.setDate(d.getDate() - 1)) {
         const option = document.createElement("option");
-        const dateStr = formatDate(date);
+        const dateStr = formatDate(d);
         option.value = dateStr;
-        const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        const dow = dayNames[date.getDay()];
-        const month = monthNames[date.getMonth()];
-        const day = String(date.getDate()).padStart(2, '0');
-        const year = date.getFullYear();
-        option.textContent = `${dow}, ${month} ${day}, ${year}`;
+        option.textContent = d.toDateString();
         selector.appendChild(option);
       }
 
       const urlDate = new URLSearchParams(window.location.search).get("date");
-      const defaultDate = urlDate || formatDate(endDate);
+      const defaultDate = urlDate || formatDate(today);
       selector.value = defaultDate;
       loadPuzzle(defaultDate);
       document.getElementById("worksheetTitle").textContent = formatWorksheetTitle(defaultDate);
@@ -174,62 +255,24 @@
           const honeycomb = document.getElementById("honeycomb");
           puzzleDiv.innerHTML = '';
           honeycomb.innerHTML = '';
-          validWords = [];
 
           for (let puzzle of puzzles) {
             if (puzzle.getAttribute("date") === dateStr) {
               const letters = puzzle.getAttribute("letters");
-              const words = Array.from(puzzle.getElementsByTagName("word")).map(w => w.textContent.toUpperCase());
-              validWords = words;
+              const letterCounts = [];
+              for (let i = 1; i <= letters.length; i++) {
+                const tag = puzzle.getElementsByTagName(`letter${i}`)[0];
+                letterCounts.push(tag ? tag.textContent : "0");
+              }
 
-              const layout = [1, 2, 0, 3, 4, 5, 6];
-              layout.forEach(i => {
-                const hex = document.createElement("div");
-                hex.className = "hex";
-                hex.textContent = letters[i];
-                hex.onclick = () => addLetter(letters[i]);
-                honeycomb.appendChild(hex);
-              });
-
-              words.sort((a, b) => a.length - b.length || a.localeCompare(b));
-              for (let word of words) {
-                const row = document.createElement("div");
-                row.className = "word-row";
-                const label = document.createElement("div");
-                label.className = "word-label";
-                label.textContent = word;
-                row.appendChild(label);
-                for (let i = 0; i < word.length; i++) {
-                  const box = document.createElement("div");
-                  box.className = "letter-box";
-                  row.appendChild(box);
-                }
-                puzzleDiv.appendChild(row);
+              for (let i = 0; i < letters.length; i++) {
+                const hexSVG = createHexSVG(letters[i], letterCounts[i], i === 0);
+                honeycomb.appendChild(hexSVG);
               }
               break;
             }
           }
         });
-    }
-
-    function addLetter(letter) {
-      currentWord += letter;
-      document.getElementById("currentWord").textContent = currentWord;
-    }
-
-    function clearWord() {
-      currentWord = '';
-      document.getElementById("currentWord").textContent = '';
-    }
-
-    function submitWord() {
-      const word = currentWord.toUpperCase();
-      if (validWords.includes(word)) {
-        alert(`✅ Correct: ${word}`);
-      } else {
-        alert(`❌ Not valid: ${word}`);
-      }
-      clearWord();
     }
 
     document.getElementById("dateSelector").addEventListener("change", function () {
@@ -238,11 +281,25 @@
       window.location.href = newUrl;
     });
 
+    document.getElementById("prevDayBtn").addEventListener("click", () => {
+      const selector = document.getElementById("dateSelector");
+      const currentIndex = selector.selectedIndex;
+      if (currentIndex < selector.options.length - 1) {
+        const prevDate = selector.options[currentIndex + 1].value;
+        window.location.href = `${window.location.pathname}?date=${prevDate}`;
+      }
+    });
+
+    document.getElementById("nextDayBtn").addEventListener("click", () => {
+      const selector = document.getElementById("dateSelector");
+      const currentIndex = selector.selectedIndex;
+      if (currentIndex > 0) {
+        const nextDate = selector.options[currentIndex - 1].value;
+        window.location.href = `${window.location.pathname}?date=${nextDate}`;
+      }
+    });
+
     populateDateSelector();
-    const selectedDate = new URLSearchParams(window.location.search).get("date");
-    if (selectedDate) {
-      document.getElementById("worksheetTitle").textContent = formatWorksheetTitle(selectedDate);
-    }
   </script>
 </body>
 </html>

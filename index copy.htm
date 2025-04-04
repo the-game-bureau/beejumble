@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bee Jumble ArcHive</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="bee.ico" type="image/x-icon" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background: #fff;
+      color: #111;
+      padding: 0;
+      line-height: 1.6;
+    }
+
+    .navbar {
+      background-color: #000;
+      color: #FFD700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      flex-wrap: wrap;
+    }
+
+    .navbar-title {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .navbar-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .navbar-button {
+      text-decoration: none;
+      background-color: transparent;
+      border: 2px solid #FFD700;
+      color: #FFD700;
+      height: 40px;
+      padding: 0 0.75rem;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 1em;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      transition: background-color 0.2s, color 0.2s;
+    }
+
+    .navbar-button:hover {
+      background-color: #FFD700;
+      color: #000;
+    }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+
+    .nav-controls button,
+    .nav-controls select {
+      height: 40px;
+      padding: 0 0.75em;
+      font-size: 1em;
+      border: 2px solid #FFD700;
+      background-color: transparent;
+      color: #FFD700;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s, color 0.2s;
+    }
+
+    .nav-controls button:hover,
+    .nav-controls select:hover {
+      background-color: #FFD700;
+      color: #000;
+    }
+
+    .nav-controls select {
+      appearance: none;
+    }
+
+    @media (max-width: 600px) {
+      .navbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .navbar-buttons {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      header.main-header {
+        min-width: unset;
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+    }
+
+    .instructions {
+      max-width: 700px;
+      margin: 1.25em auto 0.75em;
+      font-size: 1rem;
+      color: #333;
+      text-align: center;
+      line-height: 1.5;
+      padding: 0 1em;
+    }
+
+    .separator {
+      width: 800px;
+      margin: 1em auto;
+      border: 0;
+      border-top: 1px solid #ccc;
+    }
+
+    .subtitle {
+      text-align: center;
+      font-size: 1em;
+      margin: 0.5em auto 0.75em;
+    }
+
+    header.main-header {
+      display: grid;
+      grid-template-columns: auto;
+      align-items: center;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0.5em 0;
+    }
+
+    .honeycomb-container {
+      display: flex;
+      justify-content: center;
+      min-height: 70px;
+    }
+
+    #honeycomb:empty::before {
+      content: "";
+      display: block;
+      width: 420px;
+      height: 60px;
+    }
+
+    .honeycomb {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    svg {
+      display: block;
+    }
+
+    .puzzle {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2em;
+    }
+
+    .puzzle-columns {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .puzzle-column {
+      display: flex;
+      flex-direction: column;
+      padding-right: 1em;
+      margin-right: 1em;
+      border-right: 1px solid #ccc;
+      flex: 1 1 calc(25% - 1em);
+      max-width: calc(25% - 1em);
+      box-sizing: border-box;
+    }
+
+    .puzzle-column:nth-child(4n) {
+      border-right: none;
+      margin-right: 0;
+      padding-right: 0;
+    }
+
+    .word-row {
+      display: flex;
+      align-items: center;
+      margin: 0.5em 0;
+      flex-wrap: wrap;
+    }
+
+    .letter-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0 4px;
+    }
+
+    .letter-label {
+      font-size: 1em;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .letter-box {
+      width: 24px;
+      height: 24px;
+      border: 1px solid #aaa;
+      text-align: center;
+      line-height: 24px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 🐝 Navigation Bar -->
+  <nav class="navbar">
+    <div class="navbar-title">Bee Jumble ArcHive</div>
+    <div class="navbar-buttons">
+      <div class="nav-controls">
+        <button id="prevDayBtn">←</button>
+        <select id="dateSelector"></select>
+        <button id="nextDayBtn">→</button>
+      </div>
+      <button class="navbar-button" onclick="window.print()">🖨️ Print</button>
+      <a class="navbar-button" href="https://beebox.substack.com" target="_blank" rel="noopener noreferrer">🐝 Bee Box</a>
+    </div>
+  </nav>
+
+  <!-- 📝 Instructions -->
+  <div class="instructions">
+    <p>
+      <strong>Feeling stuck on today’s NYT Spelling Bee, but not ready to throw in the towel?</strong><br />
+      We’ve got your back — below are the valid words from the puzzle… but jumbled!<br />
+      Unscramble them to discover what you’ve missed — without fully spoiling the game.
+    </p>
+  </div>
+
+  <!-- Divider -->
+  <hr class="separator" />
+
+  <!-- 📣 Subtitle -->
+  <div class="subtitle" id="worksheetTitle">
+    TheGameBureau.com presents the Bee Jumble Worksheet
+  </div>
+
+  <!-- 🧩 Hexagons -->
+  <header class="main-header">
+    <div class="honeycomb-container">
+      <div class="honeycomb" id="honeycomb"></div>
+    </div>
+  </header>
+
+  <!-- 🧠 Puzzle Output -->
+  <div class="puzzle" id="puzzle"></div>
+
+  <script>
+    function formatDate(date) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
+    function formatWorksheetTitle(dateStr) {
+      const date = new Date(dateStr);
+      const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      return `TheGameBureau.com presents the Bee Jumble Worksheet for ${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+    }
+
+    function createHexSVG(letter, count, isYellow = false) {
+      const svgNS = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(svgNS, "svg");
+      svg.setAttribute("width", "60");
+      svg.setAttribute("height", "52");
+      svg.setAttribute("viewBox", "0 0 100 86");
+
+      const polygon = document.createElementNS(svgNS, "polygon");
+      polygon.setAttribute("points", "50,0 93,25 93,61 50,86 7,61 7,25");
+      polygon.setAttribute("fill", isYellow ? "#f7da21" : "#e0e0e0");
+      polygon.setAttribute("stroke", isYellow ? "#000" : "#999");
+      polygon.setAttribute("stroke-width", isYellow ? "3" : "1");
+      svg.appendChild(polygon);
+
+      const text = document.createElementNS(svgNS, "text");
+      text.setAttribute("x", "50%");
+      text.setAttribute("y", "50%");
+      text.setAttribute("text-anchor", "middle");
+      text.setAttribute("font-family", "Georgia");
+      text.setAttribute("font-size", "32");
+      text.setAttribute("font-weight", "bold");
+      text.setAttribute("fill", "#000");
+      text.setAttribute("dominant-baseline", "middle");
+      text.innerHTML = `${letter}<tspan dx="4" dy="0" font-size="22" alignment-baseline="middle">${count}</tspan>`;
+      svg.appendChild(text);
+
+      return svg;
+    }
+
+    function populateDateSelector() {
+      const selector = document.getElementById("dateSelector");
+      const startDate = new Date("2018-05-09");
+      const today = new Date();
+      for (let d = new Date(today); d >= startDate; d.setDate(d.getDate() - 1)) {
+        const option = document.createElement("option");
+        const dateStr = formatDate(d);
+        option.value = dateStr;
+        option.textContent = d.toDateString();
+        selector.appendChild(option);
+      }
+
+      const urlDate = new URLSearchParams(window.location.search).get("date");
+      const defaultDate = urlDate || formatDate(today);
+      selector.value = defaultDate;
+      loadPuzzle(defaultDate);
+      document.getElementById("worksheetTitle").textContent = formatWorksheetTitle(defaultDate);
+    }
+
+    function loadPuzzle(dateStr) {
+      fetch("jumbledbees.xml")
+        .then(response => response.text())
+        .then(xmlText => {
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+          const puzzles = xmlDoc.getElementsByTagName("puzzle");
+          const puzzleDiv = document.getElementById("puzzle");
+          const honeycomb = document.getElementById("honeycomb");
+          puzzleDiv.innerHTML = '';
+          honeycomb.innerHTML = '';
+
+          for (let puzzle of puzzles) {
+            if (puzzle.getAttribute("date") === dateStr) {
+              const letters = puzzle.getAttribute("letters");
+              const letterCounts = [];
+              for (let i = 1; i <= letters.length; i++) {
+                const tag = puzzle.getElementsByTagName(`letter${i}`)[0];
+                letterCounts.push(tag ? tag.textContent : "0");
+              }
+
+              for (let i = 0; i < letters.length; i++) {
+                const hexSVG = createHexSVG(letters[i], letterCounts[i], i === 0);
+                honeycomb.appendChild(hexSVG);
+              }
+              break;
+            }
+          }
+        });
+    }
+
+    document.getElementById("dateSelector").addEventListener("change", function () {
+      const date = this.value;
+      const newUrl = `${window.location.pathname}?date=${date}`;
+      window.location.href = newUrl;
+    });
+
+    document.getElementById("prevDayBtn").addEventListener("click", () => {
+      const selector = document.getElementById("dateSelector");
+      const currentIndex = selector.selectedIndex;
+      if (currentIndex < selector.options.length - 1) {
+        const prevDate = selector.options[currentIndex + 1].value;
+        window.location.href = `${window.location.pathname}?date=${prevDate}`;
+      }
+    });
+
+    document.getElementById("nextDayBtn").addEventListener("click", () => {
+      const selector = document.getElementById("dateSelector");
+      const currentIndex = selector.selectedIndex;
+      if (currentIndex > 0) {
+        const nextDate = selector.options[currentIndex - 1].value;
+        window.location.href = `${window.location.pathname}?date=${nextDate}`;
+      }
+    });
+
+    populateDateSelector();
+  </script>
+</body>
+</html>
