@@ -2,7 +2,7 @@ name: Bee Jumble Daily Upload
 
 on:
   schedule:
-    - cron: '5 7 * * *'  # Runs daily at 7:05 AM UTC (1:05 AM CT)
+    - cron: '3 8 * * *'  # ⏰ Runs at 2:03 AM Central (8:03 AM UTC)
   workflow_dispatch:      # Allows manual run from GitHub UI
 
 jobs:
