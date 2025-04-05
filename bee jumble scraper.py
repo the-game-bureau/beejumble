@@ -1,21 +1,7 @@
 # -------------------------------------------------------------------
-# 🐝 BEEJUMBLE SCRAPER COMBINED (Optimized + Progress + Deduplication + Threads)
+# 🐝 BEEJUMBLE SCRAPER
 #
-# This script scrapes Spelling Bee puzzle data from sbsolver.com
-# and falls back to the NYT site if today's puzzle is missing.
-# It:
-# - Scrapes the current month from sbsolver.com
-# - Scrapes today's puzzle from nytimes.com
-# - Avoids re-scraping puzzles already stored in bees.xml
-# - Parses puzzle words and saves them with metadata (date + URL)
-# - Adds a "letters" attribute with 7 unique puzzle letters (starting with required letter)
-# - Adds letter1–letter7 elements with counts of words starting with each letter
-# - Sorts all puzzles by date and removes duplicates
-# - Uses multithreading for faster sbsolver scraping
-# - Displays progress, new additions, and final total count of puzzles
-#
-# Requires: requests, BeautifulSoup, tqdm, concurrent.futures
-# Output: Updated bees.xml with all discovered puzzles
+# Updated to avoid saving a puzzle if its letters match yesterday’s.
 # -------------------------------------------------------------------
 
 import requests
@@ -103,6 +89,19 @@ def remove_duplicates(root):
             unique_puzzles.append(puzzle)
     root[:] = unique_puzzles
 
+def get_previous_letters(latest_date):
+    if not os.path.exists(XML_FILE):
+        return None
+    try:
+        tree = ET.parse(XML_FILE)
+        root = tree.getroot()
+        all_puzzles = sorted(root.findall("puzzle"), key=lambda p: p.attrib.get("date", ""))
+        prev_puzzle = next((p for p in reversed(all_puzzles) if p.attrib.get("date") < latest_date), None)
+        return prev_puzzle.attrib.get("letters") if prev_puzzle is not None else None
+    except Exception as e:
+        print(f"⚠️ Failed to get previous letters: {e}")
+        return None
+
 def fetch_puzzle(i, existing_dates):
     url = f"{BASE_URL}{i}"
     try:
@@ -158,6 +157,10 @@ def scrape_sbsolver_month():
             result = future.result()
             if result:
                 date_str, url, words = result
+                new_letters = calculate_letters_attribute(words)
+                previous_letters = get_previous_letters(date_str)
+                if new_letters and previous_letters and new_letters == previous_letters:
+                    continue  # Skip if same letter set as yesterday
                 append_puzzle(root, date_str, url, words)
                 sb_added += 1
 
@@ -205,6 +208,12 @@ def fetch_from_nyt():
         data = json.loads(json_str)
         words = [w.upper() for w in data.get("today", {}).get("answers", [])]
         if not words:
+            return
+
+        new_letters = calculate_letters_attribute(words)
+        previous_letters = get_previous_letters(today)
+        if new_letters and previous_letters and new_letters == previous_letters:
+            print("🛑 Skipping NYT puzzle — letters identical to yesterday.")
             return
 
         if os.path.exists(XML_FILE):

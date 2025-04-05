@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" href="bee.ico" type="image/x-icon" />
   <style>
-
 html {
   overflow-y: scroll;
   scroll-behavior: smooth;
@@ -43,7 +42,6 @@ body {
   gap: 0.75rem;
 }
 
-/* Unified style for all nav elements (buttons + select) */
 .nav-controls button,
 .nav-controls select,
 .navbar-button {
@@ -59,14 +57,12 @@ body {
   font-family: inherit;
 }
 
-/* Compact arrow buttons */
 .nav-controls button {
   width: 40px;
   padding: 0;
   text-align: center;
 }
 
-/* Date picker sizing */
 .nav-controls select {
   width: 200px;
   min-width: 150px;
@@ -74,7 +70,6 @@ body {
   padding: 0 0.75em;
 }
 
-/* Top nav buttons (Print, Bee Box) */
 .navbar-button {
   padding: 0 0.75rem;
   display: flex;
@@ -82,7 +77,6 @@ body {
   text-decoration: none;
 }
 
-/* Hover styles */
 .nav-controls button:hover,
 .nav-controls select:hover,
 .navbar-button:hover {
@@ -194,7 +188,6 @@ svg {
   background: #fffae0;
 }
 
-/* 📱 Mobile tweaks */
 @media (max-width: 480px) {
   .nav-controls {
     flex-direction: column;
@@ -218,6 +211,27 @@ svg {
   }
 }
 
+/* 🖨️ PRINT MODE */
+@media print {
+  .navbar,
+  .instructions,
+  .separator,
+  .navbar-buttons,
+  .nav-controls,
+  .nav-controls select,
+  .navbar-button {
+    display: none !important;
+  }
+
+  .subtitle {
+    display: block !important;
+  }
+
+  .word-group {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
   </style>
 </head>
 <body>
@@ -379,6 +393,7 @@ svg {
                   box.className = "word-box";
                   box.textContent = word.text;
                   box.dataset.revealed = "false";
+                  box.dataset.word = word.text;
 
                   if (word.original && word.original !== word.text) {
                     box.addEventListener("click", () => {
@@ -426,6 +441,14 @@ svg {
     });
 
     populateDateSelector();
+
+    // 🖨️ Auto-fix revealed words before print
+    window.addEventListener('beforeprint', () => {
+      document.querySelectorAll('.word-box[data-word]').forEach(box => {
+        box.textContent = box.dataset.word;
+        box.dataset.revealed = "false";
+      });
+    });
   </script>
 </body>
 </html>
