@@ -5,238 +5,268 @@
   <title>Bee Jumble ArcHive</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" href="bee.ico" type="image/x-icon" />
-
   <style>
-    body {
-      margin: 0;
-      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-      background: #fff;
-      color: #111;
-      padding: 0;
-      line-height: 1.6;
-    }
 
-    .navbar {
-      background-color: #000;
-      color: #FFD700;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.75rem 1rem;
-      flex-wrap: wrap;
-    }
+html {
+  overflow-y: scroll;
+  scroll-behavior: smooth;
+}
 
-    .navbar-title {
-      font-size: 1.5rem;
-      font-weight: bold;
-    }
+body {
+  margin: 0;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  background: #fff;
+  color: #111;
+  padding: 0;
+  line-height: 1.6;
+}
 
-    .navbar-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 0.75rem;
-    }
+.navbar {
+  background-color: #000;
+  color: #FFD700;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  flex-wrap: wrap;
+}
 
-    .navbar-button {
-      text-decoration: none;
-      background-color: transparent;
-      border: 2px solid #FFD700;
-      color: #FFD700;
-      height: 40px;
-      padding: 0 0.75rem;
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 1em;
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-      transition: background-color 0.2s, color 0.2s;
-    }
+.navbar-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
 
-    .navbar-button:hover {
-      background-color: #FFD700;
-      color: #000;
-    }
+.navbar-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
 
-    .nav-controls {
-      display: flex;
-      align-items: center;
-      gap: 0.5em;
-    }
+.nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.25em;
+  flex-wrap: nowrap;
+}
 
-    .nav-controls button,
-    .nav-controls select {
-      height: 40px;
-      padding: 0 0.75em;
-      font-size: 1em;
-      border: 2px solid #FFD700;
-      background-color: transparent;
-      color: #FFD700;
-      border-radius: 6px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background-color 0.2s, color 0.2s;
-    }
+.nav-controls button,
+.nav-controls select,
+.navbar-button {
+  height: 40px;
+  font-size: 1em;
+  border: 2px solid #FFD700;
+  background-color: transparent;
+  color: #FFD700;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+  font-family: inherit;
+}
 
-    .nav-controls button:hover,
-    .nav-controls select:hover {
-      background-color: #FFD700;
-      color: #000;
-    }
+.nav-controls button {
+  width: 40px;
+  padding: 0;
+  text-align: center;
+}
 
-    .instructions {
-      max-width: 700px;
-      margin: 1.25em auto 0.75em;
-      font-size: 1rem;
-      color: #333;
-      text-align: center;
-      line-height: 1.5;
-      padding: 0 1em;
-    }
+.nav-controls select {
+  width: 200px;
+  min-width: 150px;
+  max-width: 200px;
+  padding: 0 0.75em;
+}
 
-    .separator {
-      width: 800px;
-      margin: 1em auto;
-      border: 0;
-      border-top: 1px solid #ccc;
-    }
+.navbar-button {
+  padding: 0 0.75rem;
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
 
-    .subtitle {
-      text-align: center;
-      font-size: 1em;
-      margin: 0.5em auto 0.75em;
-    }
+.nav-controls button:hover,
+.nav-controls select:hover,
+.navbar-button:hover {
+  background-color: #FFD700;
+  color: #000;
+}
 
-    header.main-header {
-      display: grid;
-      grid-template-columns: auto;
-      align-items: center;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 0.5em 0;
-    }
+.instructions {
+  max-width: 700px;
+  margin: 1.25em auto 0.75em;
+  font-size: 1rem;
+  color: #333;
+  text-align: center;
+  line-height: 1.5;
+  padding: 0 1em;
+}
 
-    .honeycomb-container {
-      display: flex;
-      justify-content: center;
-      min-height: 70px;
-    }
+.separator {
+  width: 800px;
+  margin: 1em auto;
+  border: 0;
+  border-top: 1px solid #ccc;
+}
 
-    #honeycomb:empty::before {
-      content: "";
-      display: block;
-      width: 420px;
-      height: 60px;
-    }
+.subtitle {
+  text-align: center;
+  font-size: 1em;
+  margin: 0.5em auto 0.75em;
+}
 
-    .honeycomb {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-    }
+header.main-header {
+  display: grid;
+  grid-template-columns: auto;
+  align-items: center;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0.5em 0;
+}
 
-    svg {
-      display: block;
-    }
+.honeycomb-container {
+  display: flex;
+  justify-content: center;
+  min-height: 70px;
+}
 
-    .puzzle {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2em;
-      padding: 1em;
-    }
+#honeycomb:empty::before {
+  content: "";
+  display: block;
+  width: 420px;
+  height: 60px;
+}
 
-    .word-group {
-      max-width: 700px;
-      width: 100%;
-    }
+.honeycomb {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
 
-    .group-label {
-      font-weight: bold;
-      font-size: 1.25em;
-      margin: 1.5em 0 0.5em;
-      text-align: left;
-      color: #333;
-    }
+svg {
+  display: block;
+}
 
-    .word-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-      gap: 0.5em;
-    }
+.puzzle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1em;
+  padding: 1em;
+}
 
-    .word-box {
-      padding: 0.5em;
-      border: 1px solid #ccc;
-      text-align: center;
-      border-radius: 4px;
-      font-family: Georgia, serif;
-      background: #fdfdfd;
-      transition: background 0.2s;
-      cursor: pointer;
-    }
+.word-group {
+  max-width: 700px;
+  width: 100%;
+  margin-top: 0.15em;
+  break-inside: avoid;
+}
 
-    .word-box[data-revealed="true"] {
-      background: #fffae0;
-    }
+.group-label {
+  font-weight: bold;
+  font-size: 1.25em;
+  margin: 0.15em 0 0.1em;
+  text-align: left;
+  color: #333;
+}
 
-    @media (max-width: 768px) {
-  .navbar {
+.word-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 0.5em;
+}
+
+.word-box {
+  padding: 0.5em;
+  border: 1px solid #ccc;
+  text-align: center;
+  border-radius: 4px;
+  font-family: Georgia, serif;
+  background: #fdfdfd;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.word-box[data-revealed="true"] {
+  background: #fffae0;
+}
+
+.print-footer {
+  display: none;
+  text-align: center;
+  font-size: 0.9em;
+  margin-top: 1em;
+  color: #666;
+}
+
+/* 📱 Mobile tweaks */
+@media (max-width: 480px) {
+  .nav-controls {
     flex-direction: column;
-    align-items: flex-start;
+    gap: 0.5em;
+    align-items: stretch;
+  }
+
+  .nav-controls button,
+  .nav-controls select,
+  .navbar-button {
+    width: 100%;
   }
 
   .navbar-buttons {
-    width: 100%;
     flex-direction: column;
     align-items: stretch;
   }
 
-  .navbar-button,
-  .nav-controls select,
-  .nav-controls button {
-    width: 100%;
+  .navbar-button {
     justify-content: center;
-    margin-top: 0.5em;
+  }
+}
+
+/* 🖨️ Print styles */
+@media print {
+  .navbar,
+  .instructions,
+  .separator {
+    display: none !important;
   }
 
-  .instructions {
-    font-size: 0.95rem;
-    padding: 0 0.5em;
+  .subtitle,
+  header.main-header {
+    margin: 0 !important;
+    padding: 0.25em 0 !important;
   }
 
   .puzzle {
-    padding: 0.5em;
-    gap: 1.5em;
+    margin: 0 !important;
+    padding: 0.5em 0 !important;
+    gap: 0.5em !important;
   }
 
-  .word-grid {
-    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-    gap: 0.4em;
-  }
-
-  .word-box {
-    font-size: 0.95em;
-    padding: 0.4em;
+  .word-group {
+    margin-top: 0.15em !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   .group-label {
-    font-size: 1.1em;
-    margin-top: 1em;
+    margin: 0.15em 0 0.1em !important;
+    font-size: 1em !important;
   }
 
-  .subtitle {
-    font-size: 0.95em;
-    padding: 0 0.5em;
+  .print-footer {
+    display: block;
+    margin-top: 1em;
+    text-align: center;
+    font-size: 0.9em;
+    color: #666;
   }
 }
+
 
   </style>
 </head>
 <body>
-
   <nav class="navbar">
     <div class="navbar-title">Bee Jumble ArcHive</div>
     <div class="navbar-buttons">
@@ -254,34 +284,21 @@
     <p>
       <strong>Feeling stuck on today’s NYT Spelling Bee, but not ready to throw in the towel?</strong><br />
       We’ve got your back — below are the valid words from the puzzle… but jumbled!<br />
-      <strong>✨ Tap a jumbled word below to reveal or hide the answer.</strong>
+      <strong>✨ Tap a jumbled word below to reveal or hide the answer</strong>
     </p>
   </div>
-
   <hr class="separator" />
-
-  <div class="subtitle" id="worksheetTitle">
-    TheGameBureau.com presents the Bee Jumble Worksheet
-  </div>
-
+  <div class="subtitle" id="worksheetTitle">TheGameBureau.com presents the Bee Jumble for</div>
   <header class="main-header">
     <div class="honeycomb-container">
       <div class="honeycomb" id="honeycomb"></div>
     </div>
   </header>
-
   <div class="puzzle" id="puzzle"></div>
 
   <script>
     function formatDate(date) {
       return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    }
-
-    function formatWorksheetTitle(dateStr) {
-      const date = new Date(dateStr);
-      const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-      const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-      return `TheGameBureau.com presents the Bee Jumble Worksheet for ${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
     }
 
     function createHexSVG(letter, count, isYellow = false) {
@@ -314,22 +331,31 @@
     }
 
     function populateDateSelector() {
-      const selector = document.getElementById("dateSelector");
-      const startDate = new Date("2018-05-09");
-      const today = new Date();
-      for (let d = new Date(today); d >= startDate; d.setDate(d.getDate() - 1)) {
-        const option = document.createElement("option");
-        const dateStr = formatDate(d);
-        option.value = dateStr;
-        option.textContent = d.toDateString();
-        selector.appendChild(option);
-      }
+      fetch("jumbledbees.xml")
+        .then(response => response.text())
+        .then(xmlText => {
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+          const puzzles = Array.from(xmlDoc.getElementsByTagName("puzzle"));
+          const selector = document.getElementById("dateSelector");
 
-      const urlDate = new URLSearchParams(window.location.search).get("date");
-      const defaultDate = urlDate || formatDate(today);
-      selector.value = defaultDate;
-      loadPuzzle(defaultDate);
-      document.getElementById("worksheetTitle").textContent = formatWorksheetTitle(defaultDate);
+          puzzles.sort((a, b) => new Date(b.getAttribute("date")) - new Date(a.getAttribute("date")));
+
+          puzzles.forEach(puzzle => {
+            const dateStr = puzzle.getAttribute("date");
+            const [yyyy, mm, dd] = dateStr.split('-');
+            const dateObj = new Date(+yyyy, +mm - 1, +dd);
+            const option = document.createElement("option");
+            option.value = dateStr;
+            option.textContent = dateObj.toDateString();
+            selector.appendChild(option);
+          });
+
+          const urlDate = new URLSearchParams(window.location.search).get("date");
+          const defaultDate = urlDate || puzzles[0].getAttribute("date");
+          selector.value = defaultDate;
+          loadPuzzle(defaultDate);
+        });
     }
 
     function loadPuzzle(dateStr) {
@@ -346,6 +372,14 @@
 
           for (let puzzle of puzzles) {
             if (puzzle.getAttribute("date") === dateStr) {
+              const rawDate = puzzle.getAttribute("date");
+              const [yyyy, mm, dd] = rawDate.split('-');
+              const fullDate = new Date(+yyyy, +mm - 1, +dd);
+              const options = { weekday: 'long', year: 'numeric', month: 'long', day: '2-digit' };
+              const formatted = fullDate.toLocaleDateString('en-US', options);
+              document.getElementById("worksheetTitle").textContent =
+                `TheGameBureau.com presents the Bee Jumble for ${formatted}`;
+
               const letters = puzzle.getAttribute("letters");
               const wordElements = puzzle.getElementsByTagName("word");
 
@@ -394,13 +428,9 @@
 
                   if (word.original && word.original !== word.text) {
                     box.addEventListener("click", () => {
-                      if (box.dataset.revealed === "true") {
-                        box.textContent = word.text;
-                        box.dataset.revealed = "false";
-                      } else {
-                        box.textContent = `${word.text} (${word.original})`;
-                        box.dataset.revealed = "true";
-                      }
+                      box.dataset.revealed === "true"
+                        ? (box.textContent = word.text, box.dataset.revealed = "false")
+                        : (box.textContent = `${word.text} (${word.original})`, box.dataset.revealed = "true");
                     });
                   }
 
@@ -443,5 +473,6 @@
 
     populateDateSelector();
   </script>
+<div class="print-footer">-End-</div>
 </body>
 </html>
