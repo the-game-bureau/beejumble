@@ -173,7 +173,7 @@ svg {
   gap: 0.5em;
 }
 
-/* Updated word box styling */
+/* Word box on screen */
 .word-box {
   padding: 0.5em;
   border: 1px solid #ccc;
@@ -186,7 +186,7 @@ svg {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: auto; /* ✅ Don't force height on screen */
+  min-height: auto; /* Normal height on screen */
 }
 
 .word-box[data-revealed="true"] {
@@ -197,6 +197,7 @@ svg {
   font-size: 1em;
 }
 
+/* Hidden on screen, shown on print */
 .blank-line {
   height: 1.2em;
   margin-top: 0.25em;
@@ -251,14 +252,14 @@ svg {
   .blank-line {
     visibility: visible;
     border-top: 2px solid #000;
-    height: 1.5em;
+    height: 1em; /* Tighter for print */
   }
 
-  @media print {
   .word-box {
-    min-height: 3.5em; /* 👌 More balanced for writing space */
+    min-height: 2.3em; /* Clean 2-line spacing for handwriting */
   }
 }
+
   </style>
 </head>
 <body>
@@ -279,7 +280,9 @@ svg {
     <p>
       <strong>Feeling stuck on today’s NYT Spelling Bee, but not ready to throw in the towel?</strong><br />
       We’ve got your back — below are the valid words from the puzzle… but jumbled!<br />
-      <strong>✨ Tap a jumbled word below to reveal or hide the answer</strong>
+      <hr class="separator" />
+      <strong>✨ Tap a jumbled word below to reveal or hide the answer</strong><br />
+      <strong>🖨️ Prefer pencil and paper? Hit our print button and take the Bee Jumble offline — perfect for solving on the go or going full retro.</strong>
     </p>
   </div>
   <hr class="separator" />
