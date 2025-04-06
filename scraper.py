@@ -1,7 +1,7 @@
 # -------------------------------------------------------------------
-# 🐝 BEEJUMBLE SCRAPER
+# 🐝 BEEJUMBLE SCRAPER & PATCHER
 #
-# Updated to avoid saving a puzzle if its letters match yesterday’s.
+# Scrapes puzzles and ensures each has a unique puzzleid (uuid4).
 # -------------------------------------------------------------------
 
 import requests
@@ -15,6 +15,7 @@ from xml.dom import minidom
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from collections import Counter
+from uuid import uuid4
 
 XML_FILE = "bees.xml"
 BASE_URL = "https://www.sbsolver.com/s/"
@@ -63,6 +64,7 @@ def calculate_letters_attribute(words):
     return (common_letter + "".join(other_letters)).upper()
 
 def add_letter_elements(puzzle_el, words, letters):
+    from collections import Counter
     first_letter_counts = Counter(word[0] for word in words if word)
     for idx, letter in enumerate(letters):
         tag = f"letter{idx+1}"
@@ -70,10 +72,13 @@ def add_letter_elements(puzzle_el, words, letters):
         el.text = str(first_letter_counts.get(letter, 0))
 
 def append_puzzle(root, date_str, url, words):
-    puzzle_el = ET.SubElement(root, "puzzle", date=date_str, url=url)
+    puzzle_el = ET.SubElement(root, "puzzle", date=date_str, url=url, subsonlylock="YES")
+    puzzle_el.set("puzzleid", str(uuid4()))  # 🔑 Add a unique ID
+
     for word in words:
         word_el = ET.SubElement(puzzle_el, "word", length=str(len(word)))
         word_el.text = word.upper()
+
     letter_attr = calculate_letters_attribute(words)
     if letter_attr:
         puzzle_el.set("letters", letter_attr)
@@ -160,7 +165,7 @@ def scrape_sbsolver_month():
                 new_letters = calculate_letters_attribute(words)
                 previous_letters = get_previous_letters(date_str)
                 if new_letters and previous_letters and new_letters == previous_letters:
-                    continue  # Skip if same letter set as yesterday
+                    continue
                 append_puzzle(root, date_str, url, words)
                 sb_added += 1
 
@@ -233,9 +238,32 @@ def fetch_from_nyt():
     except json.JSONDecodeError:
         print("❌ JSON parsing failed.")
 
+def patch_missing_puzzleids(xml_file):
+    if not os.path.exists(xml_file):
+        print("❌ bees.xml not found.")
+        return
+
+    try:
+        tree = ET.parse(xml_file)
+        root = tree.getroot()
+        added = 0
+        for puzzle in root.findall("puzzle"):
+            if "puzzleid" not in puzzle.attrib:
+                puzzle.set("puzzleid", str(uuid4()))
+                added += 1
+            if "subsonlylock" not in puzzle.attrib:
+                puzzle.set("subsonlylock", "YES")
+        if added > 0:
+            indent(root)
+            tree.write(xml_file, encoding="utf-8", xml_declaration=True)
+            print(f"🛠️ Patched {added} puzzle(s) with missing puzzleid.")
+    except Exception as e:
+        print(f"⚠️ Failed to patch puzzleids: {e}")
+
 if __name__ == "__main__":
     scrape_sbsolver_month()
     fetch_from_nyt()
+    patch_missing_puzzleids(XML_FILE)
 
     try:
         tree = ET.parse(XML_FILE)

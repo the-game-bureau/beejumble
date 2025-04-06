@@ -375,10 +375,22 @@ svg {
             selector.appendChild(option);
           });
 
-          const urlDate = new URLSearchParams(window.location.search).get("date");
-          const defaultDate = urlDate || puzzles[0].getAttribute("date");
-          selector.value = defaultDate;
-          loadPuzzle(defaultDate);
+          const params = new URLSearchParams(window.location.search);
+const puzzleId = params.get("puzzleid");
+const urlDate = params.get("date");
+let targetDate = urlDate;
+
+if (puzzleId) {
+  const match = puzzles.find(p => p.getAttribute("puzzleid") === puzzleId);
+  if (match) {
+    targetDate = match.getAttribute("date");
+  }
+}
+
+targetDate = targetDate || puzzles[0].getAttribute("date");
+selector.value = targetDate;
+loadPuzzle(targetDate);
+
         });
     }
 
@@ -396,6 +408,19 @@ svg {
 
           for (let puzzle of puzzles) {
             if (puzzle.getAttribute("date") === dateStr) {
+  if (puzzle.getAttribute("subsonlylock") === "YES") {
+    const puzzlesArray = Array.from(puzzles).sort((a, b) => new Date(b.getAttribute("date")) - new Date(a.getAttribute("date")));
+    const currentIndex = puzzlesArray.findIndex(p => p.getAttribute("date") === dateStr);
+    const fallbackPuzzle = puzzlesArray[currentIndex + 1];
+
+    if (fallbackPuzzle) {
+      const fallbackDate = fallbackPuzzle.getAttribute("date");
+      alert("Today's Bee Jumble is available for free to subscribers now.");
+      document.getElementById("dateSelector").value = fallbackDate;
+      loadPuzzle(fallbackDate);
+    }
+    return;
+  }
               const rawDate = puzzle.getAttribute("date");
               const [yyyy, mm, dd] = rawDate.split('-');
               const fullDate = new Date(+yyyy, +mm - 1, +dd);
