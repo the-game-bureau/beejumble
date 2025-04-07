@@ -1,22 +1,47 @@
 # -------------------------------------------------------------------
-# 🌀 BEEJUMBLE JUMBLER
+# 🐝 BEE JUMBLE JUMBLER
 #
-# This script creates a jumbled version of bees.xml called jumbledbees.xml.
+# This script generates a new XML file (`jumbledbees.xml`) from the
+# source puzzle archive (`bees.xml`) for use in printable games,
+# online display, or testing.
+#
 # It performs two main tasks:
 #
 # 1. COPY + UPDATE:
-#    - Loads all puzzles from bees.xml.
-#    - Adds any missing puzzles to jumbledbees.xml.
+#    - Loads all puzzles from `bees.xml`.
+#    - Copies over any puzzles that are missing from `jumbledbees.xml`.
+#    - Matches puzzles based on a composite key of (date, url).
 #
 # 2. SCRAMBLE:
-#    - For any puzzle not already marked as "jumbled", it scrambles the letters
-#      of each word.
-#    - Sets a `jumbled="true"` attribute on each processed puzzle.
-#    - Adds an `original_word` attribute from bees.xml to each word.
+#    - For any puzzle that is not already marked `jumbled="true"`:
+#      - Scrambles each word (shuffled randomly but avoids unchanged results).
+#      - Preserves the original word in a new `original_word` attribute.
+#      - Marks the puzzle as `jumbled="true"`.
+#    - For already-jumbled puzzles:
+#      - Ensures every word has a correct `original_word` attribute.
 #
-# All puzzles are sorted by date and saved in a compact, readable XML format.
+# Additional logic:
+# - Words are sorted by length, then alphabetically, for consistency.
+# - All puzzles are re-sorted by date after updates.
+# - Final output is indented for compact, readable XML formatting.
 #
-# Output: jumbledbees.xml (ready for print/play or game display)
+# Output:
+#   📄 jumbledbees.xml (auto-created or updated)
+#
+# Typical Use Cases:
+#   - Prepare puzzles for printing or visual play without revealing answers.
+#   - Ensure jumbled puzzles are synced with the source puzzle set.
+#   - Safely patch older puzzles that lack `original_word` data.
+#
+# Notes:
+# - Scrambling is deterministic per run but not reproducible across runs.
+# - If scrambling fails to change a word after 10 tries, it reverses the word.
+#
+# Usage:
+#   python jumbler.py
+#
+# Dependencies:
+#   - Python standard library only (no external packages required).
 # -------------------------------------------------------------------
 
 import os
@@ -152,6 +177,16 @@ def copy_and_scramble_puzzles():
 
     # Step 3: Save
     target_root[:] = sorted(target_root, key=lambda p: p.attrib.get("date", ""))
+
+        # Step 3b: Mark most recent puzzle with subscribersonly="yes"
+    if target_root:
+        latest_puzzle = max(target_root, key=lambda p: p.attrib.get("date", ""))
+        for puzzle in target_root:
+            if puzzle is latest_puzzle:
+                puzzle.set("subscribersonly", "yes")
+            else:
+                puzzle.attrib.pop("subscribersonly", None)
+
     indent(target_root)
     target_tree.write(TARGET_FILE, encoding="utf-8", xml_declaration=True)
     print(f"📦 {TARGET_FILE} saved and formatted.")

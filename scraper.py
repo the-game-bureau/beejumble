@@ -1,7 +1,53 @@
 # -------------------------------------------------------------------
-# 🐝 BEEJUMBLE SCRAPER & PATCHER
+# 🐝 BEE JUMBLE SCRAPER
 #
-# Scrapes puzzles and ensures each has a unique puzzleid (uuid4).
+# This script powers the Bee Jumble puzzle archive by scraping and
+# maintaining a local XML dataset (`bees.xml`) of Spelling Bee-style
+# puzzles. It pulls puzzles from two sources:
+#
+#   1. **sbsolver.com** — Historical and current puzzles, fetched by ID.
+#   2. **nytimes.com/puzzles/spelling-bee** — The current day's puzzle.
+#
+# Key responsibilities:
+# -------------------------------------------------------------------
+# ✅ Scrapes puzzles for the current month from sbsolver.com, avoiding
+#    duplicates and skipping puzzles with identical letter sets to
+#    the previous day.
+#
+# ✅ Scrapes today's puzzle directly from the NYT site (via embedded
+#    JavaScript), also skipping duplicates and repeated letter sets.
+#
+# ✅ Automatically generates and attaches a unique `puzzleid` (UUID4)
+#    to every puzzle for reliable identification and linking.
+#
+# ✅ Stores each puzzle as an XML `<puzzle>` element inside bees.xml,
+#    complete with:
+#      - `date`, `url`, `letters`, and `puzzleid` attrs
+#      - One `<word>` element per word (with length metadata)
+#      - One `<letterX>` element (1–7) for each of the 7 letters used,
+#        containing a count of words starting with that letter
+#
+# ✅ Detects and removes duplicate puzzles (by date).
+#
+# ✅ Ensures consistent formatting and indentation in the XML output.
+#
+# ✅ Patches any previously saved puzzles that are missing a `puzzleid`.
+#
+# Notes:
+# - Letters are ordered with the common/shared letter first.
+# - The XML file is sorted chronologically by puzzle date.
+# - The script prints a summary after completion.
+#
+# Usage:
+#   python scraper.py
+#
+# Dependencies:
+#   - requests
+#   - beautifulsoup4
+#   - tqdm
+#
+# Output:
+#   - bees.xml (created or updated with new puzzle data)
 # -------------------------------------------------------------------
 
 import requests
@@ -72,8 +118,8 @@ def add_letter_elements(puzzle_el, words, letters):
         el.text = str(first_letter_counts.get(letter, 0))
 
 def append_puzzle(root, date_str, url, words):
-    puzzle_el = ET.SubElement(root, "puzzle", date=date_str, url=url, subsonlylock="YES")
-    puzzle_el.set("puzzleid", str(uuid4()))  # 🔑 Add a unique ID
+    puzzle_el = ET.SubElement(root, "puzzle", date=date_str, url=url)
+    puzzle_el.set("puzzleid", str(uuid4()))
 
     for word in words:
         word_el = ET.SubElement(puzzle_el, "word", length=str(len(word)))
@@ -141,7 +187,6 @@ def scrape_sbsolver_month():
     known_date = datetime(2025, 4, 1)
     known_id = 2520
     today = datetime.today()
-    start_of_month = today.replace(day=1)
     delta_days = (today - known_date).days
     latest_id = known_id + delta_days
     start_id = latest_id - (today.day - 1)
@@ -251,8 +296,6 @@ def patch_missing_puzzleids(xml_file):
             if "puzzleid" not in puzzle.attrib:
                 puzzle.set("puzzleid", str(uuid4()))
                 added += 1
-            if "subsonlylock" not in puzzle.attrib:
-                puzzle.set("subsonlylock", "YES")
         if added > 0:
             indent(root)
             tree.write(xml_file, encoding="utf-8", xml_declaration=True)

@@ -1,3 +1,34 @@
+# -------------------------------------------------------------------
+# 📡 BEE JUMBLE POSTER
+#
+# This script uploads Bee Jumble game files to a remote FTP server.
+# It is typically run after generating `jumbledbees.xml` and any
+# related display files like `index.htm`.
+#
+# Key responsibilities:
+# -------------------------------------------------------------------
+# ✅ Connects to the FTP server using provided credentials.
+# ✅ Uploads specified files (binary mode) to the server root.
+# ✅ Displays a progress message for each file.
+# ✅ Confirms success after all uploads are complete.
+#
+# Configuration:
+# - FTP credentials are defined at the top of the script.
+# - File list (`files_to_upload`) can be customized as needed.
+#
+# Usage:
+#   python post.py
+#
+# Output:
+#   - Files uploaded to: ftp://tii.ezv.temporary.site
+#
+# Dependencies:
+#   - Python standard library only (no external packages required).
+#
+# Suggested Workflow:
+#   1. Run `go.py` to generate fresh XML and HTML.
+#   2. Run this script to publish your Bee Jumble updates.
+# -------------------------------------------------------------------
 from ftplib import FTP
 
 # FTP server credentials

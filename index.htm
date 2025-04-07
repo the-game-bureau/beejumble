@@ -299,6 +299,7 @@ svg {
       </div>
       <button class="navbar-button" onclick="window.print()">🖨️ Print</button>
       <a class="navbar-button" href="https://thegamebureau.com/beebox" target="_blank">🐝 Bee Box</a>
+      <a class="navbar-button" href="https://beebox.substack.com/subscribe" target="_blank">📬 Subscribe</a>
     </div>
   </nav>
 
@@ -408,19 +409,27 @@ loadPuzzle(targetDate);
 
           for (let puzzle of puzzles) {
             if (puzzle.getAttribute("date") === dateStr) {
-  if (puzzle.getAttribute("subsonlylock") === "YES") {
-    const puzzlesArray = Array.from(puzzles).sort((a, b) => new Date(b.getAttribute("date")) - new Date(a.getAttribute("date")));
-    const currentIndex = puzzlesArray.findIndex(p => p.getAttribute("date") === dateStr);
-    const fallbackPuzzle = puzzlesArray[currentIndex + 1];
+              const params = new URLSearchParams(window.location.search);
+const puzzleId = params.get("puzzleid");
+const puzzleAttrId = puzzle.getAttribute("puzzleid");
 
-    if (fallbackPuzzle) {
-      const fallbackDate = fallbackPuzzle.getAttribute("date");
-      alert("Today's Bee Jumble is available for free to subscribers now.");
-      document.getElementById("dateSelector").value = fallbackDate;
-      loadPuzzle(fallbackDate);
-    }
-    return;
+if (
+  puzzle.getAttribute("subscribersonly") === "yes" &&
+  (!puzzleId || puzzleId !== puzzleAttrId)
+) {
+  const puzzlesArray = Array.from(puzzles).sort((a, b) => new Date(b.getAttribute("date")) - new Date(a.getAttribute("date")));
+  const currentIndex = puzzlesArray.findIndex(p => p.getAttribute("date") === dateStr);
+  const fallbackPuzzle = puzzlesArray[currentIndex + 1];
+
+  if (fallbackPuzzle) {
+    const fallbackDate = fallbackPuzzle.getAttribute("date");
+    alert("Today's Bee Jumble is available to free subscribers now.");
+    document.getElementById("dateSelector").value = fallbackDate;
+    loadPuzzle(fallbackDate);
   }
+  return;
+}
+
               const rawDate = puzzle.getAttribute("date");
               const [yyyy, mm, dd] = rawDate.split('-');
               const fullDate = new Date(+yyyy, +mm - 1, +dd);
