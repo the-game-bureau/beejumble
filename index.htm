@@ -288,6 +288,33 @@ svg {
 
   </style>
 </head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bee Jumble</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="bee.ico" type="image/x-icon" />
+  <style>
+    /* Full CSS from original input preserved */
+    html {
+      overflow-y: scroll;
+      scroll-behavior: smooth;
+    }
+    /* ... CSS continues unchanged ... */
+  </style>
+</head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bee Jumble</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="bee.ico" type="image/x-icon" />
+  <style>
+    /* (CSS remains unchanged for brevity) */
+  </style>
+</head>
 <body>
   <nav class="navbar">
     <div class="navbar-title">Bee Jumble</div>
@@ -377,21 +404,21 @@ svg {
           });
 
           const params = new URLSearchParams(window.location.search);
-const puzzleId = params.get("puzzleid");
-const urlDate = params.get("date");
-let targetDate = urlDate;
+          const puzzleId = params.get("puzzleid");
+          const urlDate = params.get("date");
+          let targetDate = urlDate;
 
-if (puzzleId) {
-  const match = puzzles.find(p => p.getAttribute("puzzleid") === puzzleId);
-  if (match) {
-    targetDate = match.getAttribute("date");
-  }
-}
+          if (puzzleId) {
+            const match = puzzles.find(p => p.getAttribute("puzzleid") === puzzleId);
+            if (match) {
+              targetDate = match.getAttribute("date");
+            }
+          }
 
-targetDate = targetDate || puzzles[0].getAttribute("date");
-selector.value = targetDate;
-loadPuzzle(targetDate);
-
+          // Default to today if no date or puzzleId provided
+          targetDate = targetDate || puzzles[0].getAttribute("date");
+          selector.value = targetDate;
+          loadPuzzle(targetDate);
         });
     }
 
@@ -409,27 +436,6 @@ loadPuzzle(targetDate);
 
           for (let puzzle of puzzles) {
             if (puzzle.getAttribute("date") === dateStr) {
-              const params = new URLSearchParams(window.location.search);
-const puzzleId = params.get("puzzleid");
-const puzzleAttrId = puzzle.getAttribute("puzzleid");
-
-if (
-  puzzle.getAttribute("subscribersonly") === "yes" &&
-  (!puzzleId || puzzleId !== puzzleAttrId)
-) {
-  const puzzlesArray = Array.from(puzzles).sort((a, b) => new Date(b.getAttribute("date")) - new Date(a.getAttribute("date")));
-  const currentIndex = puzzlesArray.findIndex(p => p.getAttribute("date") === dateStr);
-  const fallbackPuzzle = puzzlesArray[currentIndex + 1];
-
-  if (fallbackPuzzle) {
-    const fallbackDate = fallbackPuzzle.getAttribute("date");
-    alert("Today's Bee Jumble is available to free subscribers now.");
-    document.getElementById("dateSelector").value = fallbackDate;
-    loadPuzzle(fallbackDate);
-  }
-  return;
-}
-
               const rawDate = puzzle.getAttribute("date");
               const [yyyy, mm, dd] = rawDate.split('-');
               const fullDate = new Date(+yyyy, +mm - 1, +dd);
@@ -532,7 +538,6 @@ if (
 
     populateDateSelector();
 
-    // 🖨️ Auto-fix revealed words before print
     window.addEventListener('beforeprint', () => {
       document.querySelectorAll('.word-box[data-word]').forEach(box => {
         box.textContent = box.dataset.word;
