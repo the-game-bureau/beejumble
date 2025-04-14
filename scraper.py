@@ -1,8 +1,7 @@
-# Updated script: ONLY fetches from NYT
 import requests
 from bs4 import BeautifulSoup
 import xml.etree.ElementTree as ET
-from datetime import date
+from datetime import date, datetime
 import os
 import json
 from xml.dom import minidom
@@ -112,9 +111,29 @@ def fetch_from_nyt():
         if not words:
             return
 
+        new_letters = calculate_letters_attribute(words)
+        if not new_letters:
+            return
+
+        # Load or create root
         if os.path.exists(XML_FILE):
             tree = ET.parse(XML_FILE)
             root = tree.getroot()
+
+            # Get most recent puzzle and its letters
+            last_puzzle = root.findall("puzzle")[-1] if len(root) else None
+            last_letters = last_puzzle.get("letters") if last_puzzle is not None else None
+
+            if new_letters == last_letters:
+                print("🚫 Today's puzzle isn't yet available.")
+
+                # ✅ Archive skipped dupe to logs
+                os.makedirs("logs", exist_ok=True)
+                log_path = os.path.join("logs", "skipped_dupes.log")
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                with open(log_path, "a", encoding="utf-8") as log_file:
+                    log_file.write(f"{timestamp} — Skipped duplicate puzzle with letters: {new_letters}\n")
+                return
         else:
             root = ET.Element("spelling_bees")
             tree = ET.ElementTree(root)
@@ -124,6 +143,7 @@ def fetch_from_nyt():
         indent(root)
         tree.write(XML_FILE, encoding="utf-8", xml_declaration=True)
         print(f"✅ NYT puzzle added.")
+
     except json.JSONDecodeError:
         print("❌ JSON parsing failed.")
 
