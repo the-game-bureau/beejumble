@@ -28,13 +28,16 @@ jobs:
         echo "\n🎲 Running Bee Jumbler..." >> output.log
         python jumbler.py >> output.log 2>&1
 
+    - name: 🛠️ Set up GitHub token for pushing
+      run: git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+
     - name: 📝 Commit & push updated XML files
       run: |
         git config --global user.name "Bee Jumble Bot"
         git config --global user.email "beejumble-bot@thegamebureau.com"
         git add bees.xml jumbledbees.xml || true
         git commit -m "🤖 Add today's puzzle and update jumbledbees.xml" || echo "No changes to commit"
-        git push
+        git push origin HEAD
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
