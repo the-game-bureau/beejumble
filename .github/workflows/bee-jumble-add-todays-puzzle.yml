@@ -52,7 +52,7 @@ jobs:
         username: ${{ secrets.EMAIL_USERNAME }}
         password: ${{ secrets.EMAIL_PASSWORD }}
         subject: "🐝 Bee Jumble Add Today's Puzzle Report"
-        to: missioncontrol+bot@thegamebureau.com
+        to: missioncontrol@thegamebureau.com
         from: Bee Jumble Bot <${{ secrets.EMAIL_USERNAME }}>
         body: |
           The Bee Jumble workflow has completed:
