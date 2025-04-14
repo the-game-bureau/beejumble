@@ -1,5 +1,8 @@
 name: Bee Jumble Add Today's Puzzle
 
+permissions:
+  contents: write  # ✅ Enables commit and push permissions
+
 on:
   schedule:
     - cron: '3 8 * * *'  # ⏰ Runs at 2:03 AM Central (8:03 AM UTC)
