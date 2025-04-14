@@ -1,4 +1,4 @@
-name: Bee Jumble Daily Upload
+name: Bee Jumble Add Today's Puzzle
 
 on:
   schedule:
@@ -35,15 +35,15 @@ jobs:
         server_port: 587
         username: ${{ secrets.EMAIL_USERNAME }}
         password: ${{ secrets.EMAIL_PASSWORD }}
-        subject: "🐝 Bee Jumble Daily Scraper + Jumbler Report"
+        subject: "🐝 Bee Jumble Add Today's Puzzle Report"
         to: missioncontrol+bot@thegamebureau.com
         from: Bee Jumble Bot <${{ secrets.EMAIL_USERNAME }}>
         body: |
-          The Bee Jumble pipeline has completed:
+          The Bee Jumble workflow has completed:
 
-          - ✅ Scraped new puzzles from SB Solver and NYT
-          - 🔀 Updated and scrambled puzzles for jumbledbees.xml
-          
+          - ✅ Added today's puzzle from NYT
+          - 🔀 Updated and scrambled jumbledbees.xml
+
           See the attached log for full details.
 
         attachments: output.log
