@@ -183,7 +183,7 @@ def copy_and_scramble_puzzles():
         latest_puzzle = max(target_root, key=lambda p: p.attrib.get("date", ""))
         for puzzle in target_root:
             if puzzle is latest_puzzle:
-                puzzle.set("subscribersonly", "yes")
+                puzzle.set("subscribersonly", "no")
             else:
                 puzzle.attrib.pop("subscribersonly", None)
 

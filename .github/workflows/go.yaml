@@ -21,13 +21,12 @@ jobs:
     - name: 📥 Install Python dependencies
       run: pip install -r requirements.txt
 
-    - name: 🧩 Run Bee Jumble pipeline and capture log
-      env:
-        FTP_HOST: ${{ secrets.FTP_HOST }}
-        FTP_USER: ${{ secrets.FTP_USER }}
-        FTP_PASS: ${{ secrets.FTP_PASS }}
+    - name: 🧩 Run scraper.py and jumbler.py, capture log
       run: |
-        python go.py > output.log 2>&1
+        echo "🐝 Running Bee Jumble Scraper..." > output.log
+        python scraper.py >> output.log 2>&1
+        echo "\n🎲 Running Bee Jumbler..." >> output.log
+        python jumbler.py >> output.log 2>&1
 
     - name: ✉️ Email summary to Kevin
       uses: dawidd6/action-send-mail@v3
@@ -36,12 +35,15 @@ jobs:
         server_port: 587
         username: ${{ secrets.EMAIL_USERNAME }}
         password: ${{ secrets.EMAIL_PASSWORD }}
-        subject: "🐝 Bee Jumble Daily Report"
+        subject: "🐝 Bee Jumble Daily Scraper + Jumbler Report"
         to: missioncontrol+bot@thegamebureau.com
         from: Bee Jumble Bot <${{ secrets.EMAIL_USERNAME }}>
         body: |
-          Bee Jumble pipeline has completed.
+          The Bee Jumble pipeline has completed:
 
-          See the attached log for details.
+          - ✅ Scraped new puzzles from SB Solver and NYT
+          - 🔀 Updated and scrambled puzzles for jumbledbees.xml
+          
+          See the attached log for full details.
 
         attachments: output.log
