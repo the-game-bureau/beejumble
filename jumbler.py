@@ -4,44 +4,6 @@
 # This script generates a new XML file (`jumbledbees.xml`) from the
 # source puzzle archive (`bees.xml`) for use in printable games,
 # online display, or testing.
-#
-# It performs two main tasks:
-#
-# 1. COPY + UPDATE:
-#    - Loads all puzzles from `bees.xml`.
-#    - Copies over any puzzles that are missing from `jumbledbees.xml`.
-#    - Matches puzzles based on a composite key of (date, url).
-#
-# 2. SCRAMBLE:
-#    - For any puzzle that is not already marked `jumbled="true"`:
-#      - Scrambles each word (shuffled randomly but avoids unchanged results).
-#      - Preserves the original word in a new `original_word` attribute.
-#      - Marks the puzzle as `jumbled="true"`.
-#    - For already-jumbled puzzles:
-#      - Ensures every word has a correct `original_word` attribute.
-#
-# Additional logic:
-# - Words are sorted by length, then alphabetically, for consistency.
-# - All puzzles are re-sorted by date after updates.
-# - Final output is indented for compact, readable XML formatting.
-#
-# Output:
-#   📄 jumbledbees.xml (auto-created or updated)
-#
-# Typical Use Cases:
-#   - Prepare puzzles for printing or visual play without revealing answers.
-#   - Ensure jumbled puzzles are synced with the source puzzle set.
-#   - Safely patch older puzzles that lack `original_word` data.
-#
-# Notes:
-# - Scrambling is deterministic per run but not reproducible across runs.
-# - If scrambling fails to change a word after 10 tries, it reverses the word.
-#
-# Usage:
-#   python jumbler.py
-#
-# Dependencies:
-#   - Python standard library only (no external packages required).
 # -------------------------------------------------------------------
 
 import os
@@ -91,9 +53,8 @@ def scramble_word(original):
         random.shuffle(chars)
         scrambled = ''.join(chars)
         attempts += 1
-    if scrambled == original:
-        if len(scrambled) > 1:
-            scrambled = scrambled[::-1]
+    if scrambled == original and len(scrambled) > 1:
+        scrambled = scrambled[::-1]
     return scrambled
 
 def sort_words_in_puzzle(puzzle):
@@ -150,7 +111,6 @@ def copy_and_scramble_puzzles():
         original_words = [w.text for w in source_puzzle.findall("word")] if source_puzzle is not None else []
 
         if puzzle.attrib.get("jumbled") != "true":
-            # Jumble + add original_word from source
             for idx, word_el in enumerate(puzzle.findall("word")):
                 original = original_words[idx] if idx < len(original_words) else (word_el.text or "")
                 scrambled = scramble_word(original)
@@ -160,7 +120,6 @@ def copy_and_scramble_puzzles():
             puzzle.attrib["jumbled"] = "true"
             scrambled_count += 1
         else:
-            # Already jumbled — just ensure original_word is patched from bees.xml
             for idx, word_el in enumerate(puzzle.findall("word")):
                 if "original_word" not in word_el.attrib:
                     original = original_words[idx] if idx < len(original_words) else (word_el.text or "")
@@ -178,8 +137,8 @@ def copy_and_scramble_puzzles():
     # Step 3: Save
     target_root[:] = sorted(target_root, key=lambda p: p.attrib.get("date", ""))
 
-        # Step 3b: Mark most recent puzzle with subscribersonly="yes"
-    if target_root:
+    # Step 3b: Mark most recent puzzle with subscribersonly="no"
+    if target_root is not None and len(target_root):
         latest_puzzle = max(target_root, key=lambda p: p.attrib.get("date", ""))
         for puzzle in target_root:
             if puzzle is latest_puzzle:
