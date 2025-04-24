@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"name": "bee-box-1",
+			"path": "../bee-box-1"
+		}
+	],
+	"settings": {}
+}
