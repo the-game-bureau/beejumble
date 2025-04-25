@@ -5,8 +5,10 @@ permissions:
 
 on:
   schedule:
-    - cron: '3 8 * * *'  # ⏰ Runs at 2:03 AM Central (8:03 AM UTC)
-  workflow_dispatch:      # Allows manual run from GitHub UI
+    - cron: '3 7 * * *'  # 2:03 AM CT during DST (Mar–Nov)
+    - cron: '3 8 * * *'  # 2:03 AM CT during Standard Time (Nov–Mar)
+  workflow_dispatch:  
+
 
 jobs:
   run-beejumble:
