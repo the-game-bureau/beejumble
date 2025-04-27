@@ -1,27 +1,24 @@
-import requests
-from bs4 import BeautifulSoup
-import xml.etree.ElementTree as ET
-from datetime import date, datetime
+#!/usr/bin/env python3
+"""
+📅 New Spelling Bee Harvester – harvestpast2.py
+
+Fetches Spelling Bee puzzles from the last 10 days (based on https://www.nytimes.com/puzzles/spelling-bee/YYYY-MM-DD),
+adds them to bees.xml if missing, sorted chronologically (newest at bottom).
+"""
+
 import os
+import time
 import json
-from xml.dom import minidom
-from uuid import uuid4
+import requests
+import xml.etree.ElementTree as ET
+from bs4 import BeautifulSoup
+from datetime import datetime, timedelta
 
-XML_FILE = "bees.xml"
-NYT_URL = "https://www.nytimes.com/puzzles/spelling-bee"
-nyt_added = 0
+# ─── Configuration ─────────────────────────────────────────────────────────────
+XML_FILE = "bees.xml"  # Save directly to bees.xml in the project root
+BASE_URL = "https://www.nytimes.com/puzzles/spelling-bee"
 
-def load_existing_dates():
-    if not os.path.exists(XML_FILE):
-        return set()
-    try:
-        tree = ET.parse(XML_FILE)
-        root = tree.getroot()
-        return {p.attrib.get("date") for p in root.findall("puzzle")}
-    except ET.ParseError:
-        print("⚠️ Warning: bees.xml exists but is not readable.")
-        return set()
-
+# ─── Pretty-Print XML ──────────────────────────────────────────────────────────
 def indent(elem, level=0):
     i = "\n" + "  " * level
     j = "\n" + "  " * (level + 1)
@@ -30,152 +27,114 @@ def indent(elem, level=0):
             elem.text = j
         for idx, child in enumerate(elem):
             indent(child, level + 1)
-            child.tail = i if idx == len(elem) - 1 else j
+            child.tail = j if idx < len(elem) - 1 else i
     else:
-        elem.text = elem.text or ''
-        elem.tail = elem.tail or i
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
 
-def find_common_letter(words):
-    letter_sets = [set(word) for word in words if word.isalpha()]
-    common = set.intersection(*letter_sets) if letter_sets else set()
-    return sorted(common)[0] if common else None
+# ─── Load existing bees.xml ────────────────────────────────────────────────────
+if os.path.exists(XML_FILE):
+    tree = ET.parse(XML_FILE)
+    root = tree.getroot()
+else:
+    root = ET.Element("puzzles")
+    tree = ET.ElementTree(root)
 
-def calculate_letters_attribute(words):
-    words = [w.upper() for w in words]
-    common_letter = find_common_letter(words)
-    if not common_letter:
-        return None
-    all_letters = set("".join(words))
-    all_letters.discard(common_letter)
-    other_letters = sorted(all_letters)[:6]
-    return (common_letter + "".join(other_letters)).upper()
+# ─── Get list of already existing puzzle dates ──────────────────────────────────
+existing_dates = {puzzle.get("date") for puzzle in root.findall("puzzle")}
 
-def add_letter_elements(puzzle_el, words, letters):
-    from collections import Counter
-    first_letter_counts = Counter(word[0] for word in words if word)
-    for idx, letter in enumerate(letters):
-        tag = f"letter{idx+1}"
-        el = ET.SubElement(puzzle_el, tag)
-        el.text = str(first_letter_counts.get(letter, 0))
+# ─── Fetch and add new puzzles ──────────────────────────────────────────────────
+today = datetime.now()
 
-def append_puzzle(root, date_str, url, words):
-    puzzle_el = ET.SubElement(root, "puzzle", date=date_str, url=url)
-    puzzle_el.set("puzzleid", str(uuid4()))
+for days_ago in range(1, 11):  # 1 to 10 days ago
+    date_obj = today - timedelta(days=days_ago)
+    date_str = date_obj.strftime("%Y-%m-%d")
 
-    for word in words:
-        word_el = ET.SubElement(puzzle_el, "word", length=str(len(word)))
-        word_el.text = word.upper()
+    if date_str in existing_dates:
+        print(f"✅ {date_str} already exists, skipping.")
+        continue
 
-    letter_attr = calculate_letters_attribute(words)
-    if letter_attr:
-        puzzle_el.set("letters", letter_attr)
-        add_letter_elements(puzzle_el, words, letter_attr)
+    url = f"{BASE_URL}/{date_str}"
+    print(f"🔎 Fetching {url} ...")
 
-def fetch_from_nyt():
-    global nyt_added
-    today = date.today().strftime("%Y-%m-%d")
-    existing_dates = load_existing_dates()
-    if today in existing_dates:
-        return
-
-    print("🔍 Fetching from NYT site")
-    headers = {"User-Agent": "Mozilla/5.0"}
     try:
-        res = requests.get(NYT_URL, headers=headers, timeout=10)
-        res.raise_for_status()
-    except Exception as e:
-        print(f"❌ NYT fetch failed: {e}")
-        return
+        response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
+        if response.status_code != 200:
+            print(f"⚠️  Skipped {date_str} (status {response.status_code})")
+            continue
 
-    soup = BeautifulSoup(res.text, "html.parser")
-    script = next((s.string for s in soup.find_all("script") if s.string and "window.gameData" in s.string), None)
-    if not script:
-        return
+        soup = BeautifulSoup(response.text, "html.parser")
 
-    json_start = script.find("{")
-    brace_count = 0
-    for i in range(json_start, len(script)):
-        if script[i] == "{":
-            brace_count += 1
-        elif script[i] == "}":
-            brace_count -= 1
+        # Find <script> containing window.gameData
+        script_tag = next(
+            (s.string for s in soup.find_all("script") if s.string and "window.gameData" in s.string),
+            None
+        )
+        if not script_tag:
+            print(f"⚠️  No gameData found for {date_str}")
+            continue
+
+        # Extract JSON manually
+        start = script_tag.find("{")
+        brace_count = 0
+        for i in range(start, len(script_tag)):
+            if script_tag[i] == '{':
+                brace_count += 1
+            elif script_tag[i] == '}':
+                brace_count -= 1
             if brace_count == 0:
-                json_str = script[json_start:i+1]
+                json_str = script_tag[start:i + 1]
                 break
-    else:
-        return
 
-    try:
         data = json.loads(json_str)
-        words = [w.upper() for w in data.get("today", {}).get("answers", [])]
-        if not words:
-            return
+        puzzle_data = data.get("today", {})
 
-        new_letters = calculate_letters_attribute(words)
-        if not new_letters:
-            return
+        answers = puzzle_data.get("answers", [])
+        center_letter = puzzle_data.get("centerLetter", "").upper()
+        outer_letters = [l.upper() for l in puzzle_data.get("outerLetters", [])]
+        full_letters = center_letter + ''.join(outer_letters)
+        puzzle_id = str(puzzle_data.get("id", ""))  # 🛠️ Force to string
 
-        # Load or create root
-        if os.path.exists(XML_FILE):
-            tree = ET.parse(XML_FILE)
-            root = tree.getroot()
+        if not answers or not center_letter or not outer_letters:
+            print(f"⚠️  Missing puzzle data for {date_str}")
+            continue
 
-            # Get most recent puzzle and its letters
-            last_puzzle = root.findall("puzzle")[-1] if len(root) else None
-            last_letters = last_puzzle.get("letters") if last_puzzle is not None else None
+        # Build the <puzzle> element
+        puzzle_elem = ET.Element(
+            "puzzle",
+            date=date_str,
+            url="https://www.nytimes.com/puzzles/spelling-bee",
+            puzzleid=puzzle_id,
+            letters=full_letters
+        )
 
-            if new_letters == last_letters:
-                print("🚫 Today's puzzle isn't yet available.")
+        # FIRST, add all <word length="X"> elements
+        sorted_answers = sorted(a.upper() for a in answers)
+        for word in sorted_answers:
+            word_elem = ET.SubElement(puzzle_elem, "word", length=str(len(word)))
+            word_elem.text = word
 
-                # ✅ Archive skipped dupe to logs
-                os.makedirs("logs", exist_ok=True)
-                log_path = os.path.join("logs", "skipped_dupes.log")
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                with open(log_path, "a", encoding="utf-8") as log_file:
-                    log_file.write(f"{timestamp} — Skipped duplicate puzzle with letters: {new_letters}\n")
-                return
-        else:
-            root = ET.Element("spelling_bees")
-            tree = ET.ElementTree(root)
+        # THEN, add <letter1> to <letter7> elements
+        letter_counts = {letter: 0 for letter in full_letters}
+        for word in sorted_answers:
+            first_letter = word[0]
+            if first_letter in letter_counts:
+                letter_counts[first_letter] += 1
 
-        append_puzzle(root, today, NYT_URL, words)
-        nyt_added += 1
-        indent(root)
-        tree.write(XML_FILE, encoding="utf-8", xml_declaration=True)
-        print(f"✅ NYT puzzle added.")
+        for idx, letter in enumerate(full_letters):
+            count = letter_counts.get(letter, 0)
+            letter_elem = ET.SubElement(puzzle_elem, f"letter{idx+1}")
+            letter_elem.text = str(count)
 
-    except json.JSONDecodeError:
-        print("❌ JSON parsing failed.")
+        root.append(puzzle_elem)
+        print(f"📝 Added puzzle for {date_str} with {len(answers)} words.")
 
-def patch_missing_puzzleids(xml_file):
-    if not os.path.exists(xml_file):
-        print("❌ bees.xml not found.")
-        return
+        time.sleep(1)  # polite delay
 
-    try:
-        tree = ET.parse(xml_file)
-        root = tree.getroot()
-        added = 0
-        for puzzle in root.findall("puzzle"):
-            if "puzzleid" not in puzzle.attrib:
-                puzzle.set("puzzleid", str(uuid4()))
-                added += 1
-        if added > 0:
-            indent(root)
-            tree.write(xml_file, encoding="utf-8", xml_declaration=True)
-            print(f"🛠️ Patched {added} puzzle(s) with missing puzzleid.")
     except Exception as e:
-        print(f"⚠️ Failed to patch puzzleids: {e}")
+        print(f"❌ Error fetching {date_str}: {e}")
 
-if __name__ == "__main__":
-    fetch_from_nyt()
-    patch_missing_puzzleids(XML_FILE)
-
-    try:
-        tree = ET.parse(XML_FILE)
-        root = tree.getroot()
-        print("\n📊 Summary:")
-        print(f"➕ NYT puzzle added: {nyt_added}")
-        print(f"📆 Total puzzles in bees.xml: {len(root)}")
-    except Exception as e:
-        print(f"⚠️ Could not parse bees.xml to count total puzzles: {e}")
+# ─── Save updated bees.xml ─────────────────────────────────────────────────────
+indent(root)
+tree.write(XML_FILE, encoding="utf-8", xml_declaration=True)
+print(f"\n✅ Finished updating {XML_FILE}")
