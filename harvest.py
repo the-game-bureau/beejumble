@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-📅 New Spelling Bee Harvester – harvestpast2.py
+📅 New Spelling Bee Harvester – harvest.py
 
-Fetches Spelling Bee puzzles from the last 10 days (based on https://www.nytimes.com/puzzles/spelling-bee/YYYY-MM-DD),
+Fetches Spelling Bee puzzles from the last 10 days (including today) 
+based on https://www.nytimes.com/puzzles/spelling-bee/YYYY-MM-DD,
 adds them to bees.xml if missing, sorted chronologically (newest at bottom).
 """
 
@@ -46,7 +47,7 @@ existing_dates = {puzzle.get("date") for puzzle in root.findall("puzzle")}
 # ─── Fetch and add new puzzles ──────────────────────────────────────────────────
 today = datetime.now()
 
-for days_ago in range(1, 11):  # 1 to 10 days ago
+for days_ago in range(0, 10):  # 0 to 9 days ago (including today)
     date_obj = today - timedelta(days=days_ago)
     date_str = date_obj.strftime("%Y-%m-%d")
 
