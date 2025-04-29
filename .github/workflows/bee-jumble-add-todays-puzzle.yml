@@ -1,51 +1,58 @@
-name: Bee Jumble Add Today's Puzzle
+name: Run Harvest  # 🛠️ Name of the GitHub Actions workflow
 
 permissions:
-  contents: write  # ✅ Enables commit and push permissions
+  contents: write  # ✏️ Allow the workflow to push commits to the repo
 
 on:
   schedule:
-    - cron: '3 7 * * *'  # 2:03 AM CT during DST (Mar–Nov)
-    - cron: '3 8 * * *'  # 2:03 AM CT during Standard Time (Nov–Mar)
-  workflow_dispatch:  
-
+    - cron: '3 2 * * *'  # ⏰ Runs at 2:03 AM Central Time daily
+      timeZone: 'America/Chicago'  # 🕰 Automatically handles CST/CDT
+  workflow_dispatch:  # 🖐️ Allow manual triggering from GitHub UI
 
 jobs:
-  run-beejumble:
-    runs-on: ubuntu-latest
-
+  harvest:
+    runs-on: ubuntu-latest  # 🖥️ Use the latest Ubuntu runner
     steps:
-    - name: 📦 Check out repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: true  # 🔑 Keep GitHub token for pushing commits
+          fetch-depth: 0              # 📜 Fetch full Git history
 
-    - name: 🐍 Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'  # 🐍 Use the latest available Python 3 version
 
-    - name: 📥 Install Python dependencies
-      run: pip install -r requirements.txt
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
-    - name: 📁 Create logs folder
-      run: mkdir -p logs
+      - name: Install dependencies
+        run: |
+          # 📦 Install required Python libraries
+          pip install requests beautifulsoup4
 
-    - name: 🧩 Run scraper.py and jumbler.py, capture log
-      run: |
-        LOGFILE="logs/output-$(date +'%Y-%m-%d').log"
-        echo "🐝 Running Bee Jumble Scraper..." > $LOGFILE
-        python scraper.py >> $LOGFILE 2>&1
-        echo "\n🎲 Running Bee Jumbler..." >> $LOGFILE
-        python jumbler.py >> $LOGFILE 2>&1
+      - name: Run harvest.py
+        run: |
+          # ▶️ Run the harvesting script
+          python harvest.py
 
-    - name: 🛠️ Set up GitHub token for pushing
-      run: git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+      - name: Commit and push updated words.xml
+        run: |
+          # 📝 Configure Git for committing
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-    - name: 📝 Commit & push updated XML files and log
-      run: |
-        git config --global user.name "Bee Jumble Bot"
-        git config --global user.email "beejumble-bot@thegamebureau.com"
-        git add bees.xml jumbledbees.xml logs/*.log || true
-        git commit -m "🤖 Add today's puzzle, jumbledbees.xml, and log file" || echo "No changes to commit"
-        git push origin HEAD
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # ➕ Stage the updated words.xml file
+          git add xml/words.xml
+
+          # 🔍 Only commit if there are actual changes
+          git diff --quiet --cached || git commit -m "chore: append $(date +'%Y-%m-%d') puzzle"
+
+          # 🚀 Push changes back to the repository
+          git push || echo "Nothing to push or push failed (non-blocking)."
